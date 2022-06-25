@@ -59,6 +59,7 @@ public:
 private:
 	static void ProcessButton(RE::AttackBlockHandler* a_this, RE::ButtonEvent* a_event, RE::PlayerControlsData * a_data) {
 		auto pc = RE::PlayerCharacter::GetSingleton();
+
 		if (pc && pc->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash 
 			&& a_event->QUserEvent() == "Right Attack/Block") {
 			if (a_event->IsHeld()) {

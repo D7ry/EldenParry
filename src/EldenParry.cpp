@@ -143,7 +143,7 @@ void EldenParry::updateBashButtonHeldTime(float a_time) {
 
 PRECISION_API::PreHitCallbackReturn EldenParry::precisionPrehitCallbackFunc(const PRECISION_API::PrecisionHitData& a_precisionHitData) {
 	PRECISION_API::PreHitCallbackReturn returnData;
-	if (!a_precisionHitData.target->Is(RE::FormType::ActorCharacter)) {
+	if (!a_precisionHitData.target || !a_precisionHitData.target->Is(RE::FormType::ActorCharacter)) {
 		return returnData;
 	}
 	if (EldenParry::GetSingleton()->processPhysicalParry(a_precisionHitData.attacker, a_precisionHitData.target->As<RE::Actor>())) {
