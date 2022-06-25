@@ -14,6 +14,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 	case SKSE::MessagingInterface::kDataLoaded:  // All ESM/ESL/ESP plugins have loaded, main menu is now active.
 		// It is now safe to access form data.
 		EldenParry::GetSingleton()->init();
+		Settings::readSettings();
 		break;
 
 		// Skyrim game events.

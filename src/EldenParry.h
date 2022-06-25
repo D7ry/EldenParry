@@ -25,15 +25,19 @@ public:
 	void playParryEffects(RE::Actor* a_parrier);
 
 	void updateBashButtonHeldTime(float a_time);
+
 	PRECISION_API::IVPrecision1* _precision_API;
-	RE::BGSSoundDescriptorForm* parrySound;
-	float GMST_fCombatHitConeAngle;
-	float parryAngle;
-	float bashButtonHeldTime;
+	RE::BGSSoundDescriptorForm* _parrySound_shd;
+	RE::BGSSoundDescriptorForm* _parrySound_wpn;
+	float _GMST_fCombatHitConeAngle;
+	float _parryAngle;
+	float _bashButtonHeldTime;
+
+
 	static PRECISION_API::PreHitCallbackReturn precisionPrehitCallbackFunc(const PRECISION_API::PrecisionHitData& a_precisionHitData);
 
 private:
-	inline bool canParry(RE::Actor* a_parrier);
+	inline bool inParryState(RE::Actor* a_parrier);
 	inline bool canParry(RE::Actor* a_parrier, RE::Projectile* a_proj);
 	inline bool canParry(RE::Actor* a_parrier, RE::Actor* a_obj);
 	inline bool inBlockAngle(RE::Actor* a_blocker, RE::TESObjectREFR* a_obj);

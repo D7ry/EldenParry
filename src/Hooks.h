@@ -26,7 +26,7 @@ private:
 	}
 	static void processHit(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr)
 	{
-		//DEBUG("hooked process hit. Aggressor: {}, Victim: {}", a_aggressor->GetName(), a_victim->GetName());
+		//for aggressor: cancle parry hitframe.
 		if (a_aggressor->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash
 			&& !isPowerAttacking(a_aggressor)) {
 			if (a_aggressor->IsPlayerRef() || Settings::bEnableNPCParry) {
@@ -39,7 +39,7 @@ private:
 				}
 			}
 		}
-
+		//for vicitm: process parry.
 		if (EldenParry::GetSingleton()->processPhysicalParry(a_aggressor, a_victim)) {
 			return;
 		}
@@ -94,10 +94,10 @@ private:
 				auto refrA = RE::TESHavokUtilities::FindCollidableRef(*hit.rootCollidableA);
 				auto refrB = RE::TESHavokUtilities::FindCollidableRef(*hit.rootCollidableB);
 				if (refrA && refrA->formType == RE::FormType::ActorCharacter) {
-					return blockHandler::GetSingleton()->preProcessProjectileBlock(refrA->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableB));
+					return EldenParry::GetSingleton()->processProjectileParry(refrA->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableB));
 				}
 				if (refrB && refrB->formType == RE::FormType::ActorCharacter) {
-					return blockHandler::GetSingleton()->preProcessProjectileBlock(refrB->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableA));
+					return EldenParry::GetSingleton()->processProjectileParry(refrB->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableA));
 				}
 			}
 		}
@@ -126,5 +126,6 @@ public:
 	static void install() {
 		Hook_OnMeleeCollision::install();
 		Hook_AttackBlockHandler::install();
+		Hook_OnProjectileCollision::install();
 	}
 };
