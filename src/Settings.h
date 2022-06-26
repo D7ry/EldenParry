@@ -48,13 +48,26 @@ public:
 	{
 	public:
 		static inline bool isPrecisionAPIObtained = false;
+		static inline bool isValhallaCombatAPIObtained = false;
 	};
-	static inline float fParryTimeWindow = 0.2;
+	static inline float fParryTimeWindow = 0.2f;
 	static inline bool bEnableWeaponParry = true;
 	static inline bool bEnableShieldParry = true;
 	static inline bool bEnableNPCParry = true;
+
+	static inline bool bEnableSlowTimeEffect = true;
+	static inline bool bEnableScreenShakeEffect = true;
+	static inline bool bEnableParrySparkEffect = true;
+	static inline bool bEnableParrySoundEffect = true;
+
 	static inline bool bEnableArrowProjectileDeflection = true;
 	static inline bool bEnableMagicProjectileDeflection = true;
+
+	static inline float fProjectileParryExp = 20.0f;
+	static inline float fMeleeParryExp = 10.0f;
+
+
+
 
 	static void readSettings() {
 		INFO("Reading settings...");
@@ -65,8 +78,18 @@ public:
 		ReadBoolSetting(settings, "General", "bEnableShieldParry", bEnableShieldParry);
 		ReadBoolSetting(settings, "General", "bEnableNPCParry", bEnableNPCParry);
 
+		ReadBoolSetting(settings, "Effects", "bEnableSlowTimeEffect", bEnableSlowTimeEffect);
+		ReadBoolSetting(settings, "Effects", "bEnableScreenShakeEffect", bEnableScreenShakeEffect);
+		ReadBoolSetting(settings, "Effects", "bEnableParrySparkEffect", bEnableParrySparkEffect);
+		ReadBoolSetting(settings, "Effects", "bEnableParrySoundEffect", bEnableParrySoundEffect);
+
+
 		ReadBoolSetting(settings, "ProjectileParry", "bEnableArrowProjectileDeflection", bEnableArrowProjectileDeflection);
 		ReadBoolSetting(settings, "ProjectileParry", "bEnableMagicProjectileDeflection", bEnableMagicProjectileDeflection);
+
+		ReadFloatSetting(settings, "Experience", "fProjectileParryExp", fProjectileParryExp);
+		ReadFloatSetting(settings, "Experience", "fMeleeParryExp", fMeleeParryExp);
+
 		INFO("done");
 	}
 };

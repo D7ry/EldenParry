@@ -319,6 +319,22 @@ public:
 
 		SetRotationMatrix(projectileNode->local.rotate, -direction.x, direction.y, direction.z);
 	}
+
+	/*Slow down game time for a set period.
+	@param a_duration: duration of the slow time.
+	@param a_percentage: relative time speed to normal time(1).*/
+	static void slowTime(float a_duration, float a_percentage)
+	{
+		int duration_milisec = static_cast<int>(a_duration * 1000);
+		RE::BSTimer::setCurrentGlobalTimeMult(a_percentage);
+		/*Reset time here*/
+		auto resetSlowTime = [](int a_duration) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(a_duration));
+			RE::BSTimer::setCurrentGlobalTimeMult(1);
+		};
+		std::jthread resetThread(resetSlowTime, duration_milisec);
+		resetThread.detach();
+	}
 };
 
 
@@ -380,4 +396,20 @@ public:
 		//DEBUG("Get Weapon Spark Position!");
 		a_actor->GetParentCell()->PlaceParticleEffect(0.0f, modelName, defenderNode->world.rotate, defenderNode->worldBound.center, 1.0f, 4U, defenderNode.get());
 	}
+};
+
+namespace inlineUtils
+{
+	inline bool isPowerAttacking(RE::Actor* a_actor) {
+		if (a_actor->currentProcess && a_actor->currentProcess->high) {
+			auto atkData = a_actor->currentProcess->high->attackData.get();
+			if (atkData) {
+				return atkData->data.flags.any(RE::AttackData::AttackFlag::kPowerAttack);
+			}
+		}
+		return false;
+	}
+
+	typedef void(_fastcall* _shakeCamera)(float strength, RE::NiPoint3 source, float duration);
+	inline static REL::Relocation<_shakeCamera> shakeCamera{ RELOCATION_ID(32275, 33012) };
 };

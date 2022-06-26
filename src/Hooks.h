@@ -15,20 +15,12 @@ public:
 	}
 
 private:
-	static inline bool isPowerAttacking(RE::Actor* a_actor) {
-		if (a_actor->currentProcess && a_actor->currentProcess->high) {
-			auto atkData = a_actor->currentProcess->high->attackData.get();
-			if (atkData) {
-				return atkData->data.flags.any(RE::AttackData::AttackFlag::kPowerAttack);
-			}
-		}
-		return false;
-	}
+
 	static void processHit(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr)
 	{
 		//for aggressor: cancle parry hitframe.
 		if (a_aggressor->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash
-			&& !isPowerAttacking(a_aggressor)) {
+			&& !inlineUtils::isPowerAttacking(a_aggressor)) {
 			if (a_aggressor->IsPlayerRef() || Settings::bEnableNPCParry) {
 				if (Utils::isEquippedShield(a_aggressor)) {
 					if (Settings::bEnableShieldParry) {
@@ -40,7 +32,7 @@ private:
 			}
 		}
 		//for vicitm: process parry.
-		if (EldenParry::GetSingleton()->processPhysicalParry(a_aggressor, a_victim)) {
+		if (EldenParry::GetSingleton()->processMeleeParry(a_aggressor, a_victim)) {
 			return;
 		}
 		_ProcessHit(a_aggressor, a_victim, a_int1, a_bool, a_unkptr);

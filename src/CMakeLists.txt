@@ -10,6 +10,7 @@ set(SOURCE_FILES
 	"${SOURCE_DIR}/Utils.hpp"
 	"${SOURCE_DIR}/Hooks.h"
 	"${SOURCE_DIR}/lib/PrecisionAPI.h"
+	"${SOURCE_DIR}/lib/ValhallaCombatAPI.h"
 )
 
 source_group(TREE "${ROOT_DIR}" FILES ${SOURCE_FILES})

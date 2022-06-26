@@ -16,7 +16,15 @@ void EldenParry::init() {
 	} else {
 		INFO("Precision API not found.");
 	}
-
+	INFO("Obtaining Valhalla Combat API...");
+	_ValhallaCombat_API = reinterpret_cast<VAL_API::IVVAL1*>(VAL_API::RequestPluginAPI());
+	if (_ValhallaCombat_API) {
+		INFO("Valhalla Combat API successfully obtained.");
+		Settings::facts::isValhallaCombatAPIObtained = true;
+	}
+	else {
+		INFO("Valhalla Combat API not found.");
+	}
 	//read parry sound
 	auto data = RE::TESDataHandler::GetSingleton();
 	_parrySound_shd = data->LookupForm<RE::BGSSoundDescriptorForm>(0xD62, "EldenParry.esp");
@@ -88,15 +96,22 @@ bool EldenParry::canParry(RE::Actor* a_parrier, RE::Projectile* a_proj) {
 }
 
 
-bool EldenParry::processPhysicalParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
+bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 {
-	if (!canParry(a_parrier, a_attacker)) {
-		return false;
+	if (canParry(a_parrier, a_attacker)) {
+		playParryEffects(a_parrier);
+		Utils::triggerStagger(a_parrier, a_attacker, 10);
+		if (Settings::facts::isValhallaCombatAPIObtained) {
+			_ValhallaCombat_API->processStunDamage(VAL_API::STUNSOURCE::parry, nullptr, a_parrier, a_attacker, 0);
+		}
+		return true;
 	}
 
-	playParryEffects(a_parrier);
-	Utils::triggerStagger(a_parrier, a_attacker, 10);
-	return true;
+
+
+	return false;
+
+	
 }
 
 /// <summary>
@@ -108,33 +123,53 @@ bool EldenParry::processPhysicalParry(RE::Actor* a_attacker, RE::Actor* a_parrie
 /// <returns>True if the projectile parry is successful.</returns>
 bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_projectile, RE::hkpCollidable* a_projectile_collidable)
 {
-	if (!canParry(a_parrier, a_projectile)) {
-		return false;
-	}
-	RE::TESObjectREFR* shooter = nullptr;
-	if (a_projectile->shooter && a_projectile->shooter.get()) {
-		shooter = a_projectile->shooter.get().get();
-		if (shooter->GetFormType() != RE::FormType::ActorCharacter) {
-			shooter = nullptr;
-		}
-	}
+	if (canParry(a_parrier, a_projectile)) {
+		Utils::resetProjectileOwner(a_projectile, a_parrier, a_projectile_collidable);
 
-	if (shooter && shooter->Is3DLoaded()) {
-		Utils::DeflectProjectile(a_parrier, a_projectile, shooter->As<RE::Actor>());
+		RE::TESObjectREFR* shooter = nullptr;
+		if (a_projectile->shooter && a_projectile->shooter.get()) {
+			shooter = a_projectile->shooter.get().get();
+			if (shooter->GetFormType() != RE::FormType::ActorCharacter) {
+				shooter = nullptr;
+			}
+		}
+
+		if (shooter && shooter->Is3DLoaded()) {
+			Utils::DeflectProjectile(a_parrier, a_projectile, shooter->As<RE::Actor>());
+		} else {
+			Utils::ReflectProjectile(a_projectile);
+		}
+		
+		playParryEffects(a_parrier);
+
+		return true;
 	}
-	Utils::resetProjectileOwner(a_projectile, a_parrier, a_projectile_collidable);
-	playParryEffects(a_parrier);
-	
-	return true;
+	return false;
+
 }
 
 void EldenParry::playParryEffects(RE::Actor* a_parrier) {
-	if (Utils::isEquippedShield(a_parrier)) {
-		Utils::playSound(a_parrier, _parrySound_shd);
-	} else {
-		Utils::playSound(a_parrier, _parrySound_wpn);
+	if (Settings::bEnableParrySoundEffect) {
+		if (Utils::isEquippedShield(a_parrier)) {
+			Utils::playSound(a_parrier, _parrySound_shd);
+		} else {
+			Utils::playSound(a_parrier, _parrySound_wpn);
+		}
 	}
-	blockSpark::playBlockSpark(a_parrier);
+	if (Settings::bEnableParrySparkEffect) {
+		blockSpark::playBlockSpark(a_parrier);
+	}
+	if (a_parrier->IsPlayerRef()) {
+		if (Settings::bEnableSlowTimeEffect) {
+			Utils::slowTime(0.2f, 0.3f);
+		}
+		if (Settings::bEnableScreenShakeEffect) {
+			inlineUtils::shakeCamera(1.5, a_parrier->GetPosition(), 0.4f);
+		}
+	}
+	
+
+	
 }
 
 void EldenParry::updateBashButtonHeldTime(float a_time) {
@@ -146,7 +181,7 @@ PRECISION_API::PreHitCallbackReturn EldenParry::precisionPrehitCallbackFunc(cons
 	if (!a_precisionHitData.target || !a_precisionHitData.target->Is(RE::FormType::ActorCharacter)) {
 		return returnData;
 	}
-	if (EldenParry::GetSingleton()->processPhysicalParry(a_precisionHitData.attacker, a_precisionHitData.target->As<RE::Actor>())) {
+	if (EldenParry::GetSingleton()->processMeleeParry(a_precisionHitData.attacker, a_precisionHitData.target->As<RE::Actor>())) {
 		returnData.bIgnoreHit = true;
 	}
 	return returnData;

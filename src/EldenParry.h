@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include "lib/PrecisionAPI.h"
-
+#include "lib/ValhallaCombatAPI.h"
 
 class EldenParry
 {
@@ -19,7 +19,7 @@ public:
 	/// <param name="a_attacker"></param>
 	/// <param name="a_parrier"></param>
 	/// <returns>True if the parry is successful.</returns>
-	bool processPhysicalParry(RE::Actor* a_attacker, RE::Actor* a_parrier);
+	bool processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier);
 
 	bool processProjectileParry(RE::Actor* a_blocker, RE::Projectile* a_projectile, RE::hkpCollidable* a_projectile_collidable);
 	void playParryEffects(RE::Actor* a_parrier);
@@ -27,6 +27,7 @@ public:
 	void updateBashButtonHeldTime(float a_time);
 
 	PRECISION_API::IVPrecision1* _precision_API;
+	VAL_API::IVVAL1* _ValhallaCombat_API;
 	RE::BGSSoundDescriptorForm* _parrySound_shd;
 	RE::BGSSoundDescriptorForm* _parrySound_wpn;
 	float _GMST_fCombatHitConeAngle;
