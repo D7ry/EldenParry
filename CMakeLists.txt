@@ -22,8 +22,8 @@ if(NOT DEFINED CompiledPluginsPath)
 	message(FATAL_ERROR "CompiledPluginsPath is not set")
 endif()
 
-option(COPY_OUTPUT "Copy the output of build operations to the game directory" OFF)
-option(BUILD_SKYRIM_AE "Build for Skyrim AE instead of SSE" OFF)
+option(COPY_OUTPUT "Copy the output of build operations to the game directory" ON)
+option(SKYRIM_SUPPORT_AE "Build for Skyrim AE instead of SSE" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 

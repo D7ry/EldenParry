@@ -23,6 +23,7 @@ namespace util
 	using SKSE::stl::report_and_fail;
 }
 
+
 #define DEBUG(msg) logger::debug(msg)
 
 #define INFO(msg) logger::info(msg)

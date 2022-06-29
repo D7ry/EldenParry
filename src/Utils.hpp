@@ -27,36 +27,29 @@ private:
 	static inline int soundHelper_a(void* manager, RE::BSSoundHandle* a2, int a3, int a4)  //sub_140BEEE70
 	{
 		using func_t = decltype(&soundHelper_a);
-		REL::Relocation<func_t> func{ REL::ID(66401) };
+		REL::Relocation<func_t> func{ RELOCATION_ID(66401, 67663) };
 		return func(manager, a2, a3, a4);
 	}
 
 	static inline void soundHelper_b(RE::BSSoundHandle* a1, RE::NiAVObject* source_node)  //sub_140BEDB10
 	{
 		using func_t = decltype(&soundHelper_b);
-		REL::Relocation<func_t> func{ REL::ID(66375) };
+		REL::Relocation<func_t> func{ RELOCATION_ID(66375, 67636) };
 		return func(a1, source_node);
 	}
 
 	static inline char __fastcall soundHelper_c(RE::BSSoundHandle* a1)  //sub_140BED530
 	{
 		using func_t = decltype(&soundHelper_c);
-		REL::Relocation<func_t> func{ REL::ID(66355) };
+		REL::Relocation<func_t> func{ RELOCATION_ID(66355, 67616) };
 		return func(a1);
 	}
 
 	static inline char set_sound_position(RE::BSSoundHandle* a1, float x, float y, float z)
 	{
 		using func_t = decltype(&set_sound_position);
-		REL::Relocation<func_t> func{ REL::ID(66370) };
+		REL::Relocation<func_t> func{ RELOCATION_ID(66370, 67631) };
 		return func(a1, x, y, z);
-	}
-
-	static inline void* BSAudioManager__GetSingleton()
-	{
-		using func_t = decltype(&BSAudioManager__GetSingleton);
-		REL::Relocation<func_t> func{ RE::Offset::BSAudioManager::GetSingleton };
-		return func();
 	}
 
 	static inline const RE::BSFixedString poise_largest = "poise_largest_start";
@@ -203,7 +196,7 @@ public:
 
 	static void resetProjectileOwner(RE::Projectile* a_projectile, RE::Actor* a_actor, RE::hkpCollidable* a_projectile_collidable)
 	{
-		a_projectile->actorCause.get()->actor = a_actor->GetHandle();
+		a_projectile->SetActorCause(a_actor->GetActorCause());
 		a_projectile->desiredTarget = a_actor->currentCombatTarget;
 		a_projectile->shooter = a_actor->GetHandle();
 		uint32_t a_collisionFilterInfo;
@@ -230,8 +223,8 @@ public:
 		handle.assumeSuccess = false;
 		*(uint32_t*)&handle.state = 0;
 
-		auto manager = BSAudioManager__GetSingleton();
-		soundHelper_a(manager, &handle, a_descriptor->GetFormID(), 16);
+
+		soundHelper_a(RE::BSAudioManager::GetSingleton(), &handle, a_descriptor->GetFormID(), 16);
 		if (set_sound_position(&handle, a->data.location.x, a->data.location.y, a->data.location.z)) {
 			soundHelper_b(&handle, a->Get3D());
 			soundHelper_c(&handle);
@@ -267,20 +260,37 @@ public:
 			Utils::SetRotationMatrix(projectileNode->local.rotate, -direction.x, direction.y, direction.z);
 		}
 	}
-	/*Deflect this projectile, aiming it at a_target.*/
-	static void DeflectProjectile(RE::Actor* a_actor, RE::Projectile* a_projectile, RE::Actor* a_target)
+
+	/*Get the body position of this actor.*/
+	static void getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos)
 	{
+		if (!a_actor->race) {
+			return;
+		}
+		RE::BGSBodyPart* bodyPart = a_actor->race->bodyPartData->parts[0];
+		if (!bodyPart) {
+			return;
+		}
+		auto targetPoint = a_actor->GetNodeByName(bodyPart->targetName.c_str());
+		if (!targetPoint) {
+			return;
+		}
+
+		pos = targetPoint->world.translate;
+	}
+
+	/*Deflect this projectile, aiming it at a_target.*/
+	static void DeflectProjectile(RE::Actor* a_actor, RE::Projectile* a_projectile, RE::TESObjectREFR* a_target)
+	{
+
 		auto projectileNode = a_projectile->Get3D2();
 		auto target = a_target->GetHandle();
 
-		RE::BGSBodyPart* bodyPart = a_target->race->bodyPartData->parts[0];
-
-		auto targetPoint = a_target->GetNodeByName(bodyPart->targetName.c_str());
-		if (!targetPoint) {
-			ReflectProjectile(a_projectile);
+		RE::NiPoint3 targetPos = a_target->GetPosition();
+		if (a_target->GetFormType() == RE::FormType::ActorCharacter) {
+			getBodyPos(a_target->As<RE::Actor>(), targetPos);
 		}
 
-		RE::NiPoint3 targetPos = targetPoint->world.translate;
 		RE::NiPoint3 targetVelocity;
 		target.get()->GetLinearVelocity(targetVelocity);
 
@@ -389,10 +399,21 @@ public:
 		if (!defenderNode || !defenderNode.get()) {
 			return;
 		}
-
-		const auto modelName =
-			BipeObjIndex == RE::BIPED_OBJECT::kShield && defenderLeftEquipped && defenderLeftEquipped->IsArmor() ? "ValhallaCombat\\impactShieldRoot.nif" : "ValhallaCombat\\impactWeaponRoot.nif";
-
+		const char* modelName;
+		if (BipeObjIndex == RE::BIPED_OBJECT::kShield && defenderLeftEquipped && defenderLeftEquipped->IsArmor()) {
+			if (Settings::facts::isValhallaCombatAPIObtained) {
+				modelName = "ValhallaCombat\\impactShieldRoot.nif";
+			} else {
+				modelName = "EldenParry\\impactShieldRoot.nif";
+			}
+			
+		} else {
+			if (Settings::facts::isValhallaCombatAPIObtained) {
+				modelName = "ValhallaCombat\\impactWeaponRoot.nif";
+			} else {
+				modelName = "EldenParry\\impactWeaponRoot.nif";
+			}
+		}
 		//DEBUG("Get Weapon Spark Position!");
 		a_actor->GetParentCell()->PlaceParticleEffect(0.0f, modelName, defenderNode->world.rotate, defenderNode->worldBound.center, 1.0f, 4U, defenderNode.get());
 	}
@@ -409,6 +430,19 @@ namespace inlineUtils
 		}
 		return false;
 	}
+
+	
+	inline void restoreav(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
+	{
+		if (a_val == 0) {
+			return;
+		}
+		if (a_actor) {
+			a_actor->As<RE::ActorValueOwner>()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, a_actorValue, a_val);
+		}
+	}
+
+
 
 	typedef void(_fastcall* _shakeCamera)(float strength, RE::NiPoint3 source, float duration);
 	inline static REL::Relocation<_shakeCamera> shakeCamera{ RELOCATION_ID(32275, 33012) };

@@ -2,7 +2,6 @@
 #include <memory>
 #include "lib/PrecisionAPI.h"
 #include "lib/ValhallaCombatAPI.h"
-
 class EldenParry
 {
 public:
@@ -38,7 +37,7 @@ public:
 	static PRECISION_API::PreHitCallbackReturn precisionPrehitCallbackFunc(const PRECISION_API::PrecisionHitData& a_precisionHitData);
 
 private:
-	inline bool inParryState(RE::Actor* a_parrier);
+	inline bool inParryState(RE::Actor* a_parrier, bool projectileParry);
 	inline bool canParry(RE::Actor* a_parrier, RE::Projectile* a_proj);
 	inline bool canParry(RE::Actor* a_parrier, RE::Actor* a_obj);
 	inline bool inBlockAngle(RE::Actor* a_blocker, RE::TESObjectREFR* a_obj);

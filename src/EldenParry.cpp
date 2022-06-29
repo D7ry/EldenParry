@@ -53,10 +53,17 @@ bool EldenParry::inBlockAngle(RE::Actor* a_blocker, RE::TESObjectREFR* a_obj)
 /// </summary>
 /// <param name="a_actor"></param>
 /// <returns></returns>
-bool EldenParry::inParryState(RE::Actor* a_actor) {
+bool EldenParry::inParryState(RE::Actor* a_actor, bool projectileParry)
+{
 	if (a_actor->IsPlayerRef()) {
-		if (_bashButtonHeldTime > Settings::fParryTimeWindow) {//check button held time for player
-			return false;
+		if (projectileParry) {
+			if (_bashButtonHeldTime > Settings::fParryTimeWindow_Projectile) {
+				return false;
+			}
+		} else {
+			if (_bashButtonHeldTime > Settings::fParryTimeWindow) {
+				return false;
+			}
 		}
 	} else if (!Settings::bEnableNPCParry) {
 		return false;
@@ -79,7 +86,7 @@ bool EldenParry::inParryState(RE::Actor* a_actor) {
 
 bool EldenParry::canParry(RE::Actor* a_parrier, RE::Actor* a_attacker)
 {
-	return inParryState(a_parrier) && inBlockAngle(a_parrier, a_attacker);
+	return inParryState(a_parrier, false) && inBlockAngle(a_parrier, a_attacker);
 }
 
 bool EldenParry::canParry(RE::Actor* a_parrier, RE::Projectile* a_proj) {
@@ -92,22 +99,24 @@ bool EldenParry::canParry(RE::Actor* a_parrier, RE::Projectile* a_proj) {
 			return false;
 		}
 	}
-	return inParryState(a_parrier) && inBlockAngle(a_parrier, a_proj);
+	return inParryState(a_parrier, true) && inBlockAngle(a_parrier, a_proj);
 }
 
 
 bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 {
 	if (canParry(a_parrier, a_attacker)) {
+		inlineUtils::restoreav(a_parrier, RE::ActorValue::kStamina, Settings::fParryStaminaRecovery);
 		playParryEffects(a_parrier);
 		Utils::triggerStagger(a_parrier, a_attacker, 10);
 		if (Settings::facts::isValhallaCombatAPIObtained) {
 			_ValhallaCombat_API->processStunDamage(VAL_API::STUNSOURCE::parry, nullptr, a_parrier, a_attacker, 0);
 		}
+		if (a_parrier->IsPlayerRef()) {
+			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fMeleeParryExp);
+		}
 		return true;
 	}
-
-
 
 	return false;
 
@@ -124,24 +133,23 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_projectile, RE::hkpCollidable* a_projectile_collidable)
 {
 	if (canParry(a_parrier, a_projectile)) {
-		Utils::resetProjectileOwner(a_projectile, a_parrier, a_projectile_collidable);
-
 		RE::TESObjectREFR* shooter = nullptr;
 		if (a_projectile->shooter && a_projectile->shooter.get()) {
 			shooter = a_projectile->shooter.get().get();
-			if (shooter->GetFormType() != RE::FormType::ActorCharacter) {
-				shooter = nullptr;
-			}
 		}
 
+		Utils::resetProjectileOwner(a_projectile, a_parrier, a_projectile_collidable);
+
 		if (shooter && shooter->Is3DLoaded()) {
-			Utils::DeflectProjectile(a_parrier, a_projectile, shooter->As<RE::Actor>());
+			Utils::DeflectProjectile(a_parrier, a_projectile, shooter);
 		} else {
 			Utils::ReflectProjectile(a_projectile);
 		}
 		
 		playParryEffects(a_parrier);
-
+		if (a_parrier->IsPlayerRef()) {
+			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fProjectileParryExp);
+		}
 		return true;
 	}
 	return false;
@@ -168,8 +176,6 @@ void EldenParry::playParryEffects(RE::Actor* a_parrier) {
 		}
 	}
 	
-
-	
 }
 
 void EldenParry::updateBashButtonHeldTime(float a_time) {
@@ -186,3 +192,4 @@ PRECISION_API::PreHitCallbackReturn EldenParry::precisionPrehitCallbackFunc(cons
 	}
 	return returnData;
 }
+

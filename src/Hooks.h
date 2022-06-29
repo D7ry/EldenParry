@@ -8,36 +8,55 @@ class Hook_OnMeleeCollision
 public:
 	static void install()
 	{
-		REL::Relocation<uintptr_t> hook{ REL::ID(37650) }; //SE:627930 AE:
+		REL::Relocation<uintptr_t> hook{ RELOCATION_ID(37650, 38603) };  //SE:627930 + 38B AE:64D350 + 40A / 45A
 		auto& trampoline = SKSE::GetTrampoline();
+#ifdef SKYRIM_SUPPORT_AE
+		//_ProcessHit = trampoline.write_call<5>(hook.address() + 0x40A, processHit); //This func is also called on 38603, which doesn't seem to interfere with melee collision.
+		_ProcessHit = trampoline.write_call<5>(hook.address() + 0x45A, processHit);
+#else
 		_ProcessHit = trampoline.write_call<5>(hook.address() + 0x38B, processHit);
+#endif
 		logger::info("Melee Hit hook installed.");
 	}
 
 private:
-
-	static void processHit(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr)
-	{
+	static inline bool shouldIgnoreHit(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr) {
 		//for aggressor: cancle parry hitframe.
-		if (a_aggressor->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash
-			&& !inlineUtils::isPowerAttacking(a_aggressor)) {
+		if (a_aggressor->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash && !inlineUtils::isPowerAttacking(a_aggressor)) {
+			INFO(a_aggressor->GetName());
+			INFO(a_victim->GetName());
 			if (a_aggressor->IsPlayerRef() || Settings::bEnableNPCParry) {
 				if (Utils::isEquippedShield(a_aggressor)) {
 					if (Settings::bEnableShieldParry) {
-						return;
+						return true;
 					}
 				} else if (Settings::bEnableWeaponParry) {
-					return;
+					return true;
 				}
 			}
 		}
 		//for vicitm: process parry.
 		if (EldenParry::GetSingleton()->processMeleeParry(a_aggressor, a_victim)) {
+			return true;
+		}
+		return false;
+	}
+	static void processHit(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr)
+	{
+		if (shouldIgnoreHit(a_aggressor, a_victim, a_int1, a_bool, a_unkptr)) {
 			return;
 		}
 		_ProcessHit(a_aggressor, a_victim, a_int1, a_bool, a_unkptr);
 	}
+	static void processHit1(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr)
+	{
+		if (shouldIgnoreHit(a_aggressor, a_victim, a_int1, a_bool, a_unkptr)) {
+			return;
+		}
+		_ProcessHit1(a_aggressor, a_victim, a_int1, a_bool, a_unkptr);
+	}
 	static inline REL::Relocation<decltype(processHit)> _ProcessHit;
+	static inline REL::Relocation<decltype(processHit1)> _ProcessHit1;
 };
 
 class Hook_AttackBlockHandler
@@ -117,8 +136,11 @@ class Hooks
 {
 public:
 	static void install() {
-		Hook_OnMeleeCollision::install();
+		//SKSE::AllocTrampoline(1 << 4);
+		SKSE::AllocTrampoline(1 << 5);
+		
 		Hook_AttackBlockHandler::install();
+		Hook_OnMeleeCollision::install();
 		Hook_OnProjectileCollision::install();
 	}
 };
