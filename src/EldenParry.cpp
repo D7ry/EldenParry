@@ -191,8 +191,10 @@ void EldenParry::applyParryCost(RE::Actor* a_actor) {
 	{
 		uniqueLocker lock(mtx_parryCostQueue);
 		sharedLocker lock2(mtx_parrySuccessActors);
-		if (_parryCostQueue.contains(a_actor) && !_parrySuccessActors.contains(a_actor)) {
-			inlineUtils::damageAv(a_actor, RE::ActorValue::kStamina, _parryCostQueue[a_actor]);
+		if (_parryCostQueue.contains(a_actor)) {
+			if (!_parrySuccessActors.contains(a_actor)) {
+				inlineUtils::damageAv(a_actor, RE::ActorValue::kStamina, _parryCostQueue[a_actor]);
+			}
 			_parryCostQueue.erase(a_actor);
 		}
 	}
