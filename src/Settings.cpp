@@ -9,7 +9,7 @@ void Settings::readSettings() {
 	ReadBoolSetting(settings, "General", "bEnableWeaponParry", bEnableWeaponParry);
 	ReadBoolSetting(settings, "General", "bEnableShieldParry", bEnableShieldParry);
 	ReadBoolSetting(settings, "General", "bEnableNPCParry", bEnableNPCParry);
-	ReadFloatSetting(settings, "General", "fParryStaminaRecovery", fParryStaminaRecovery);
+	ReadBoolSetting(settings, "General", "bSuccessfulParryNoCost", bSuccessfulParryNoCost);
 
 	ReadBoolSetting(settings, "Effects", "bEnableSlowTimeEffect", bEnableSlowTimeEffect);
 	ReadBoolSetting(settings, "Effects", "bEnableScreenShakeEffect", bEnableScreenShakeEffect);

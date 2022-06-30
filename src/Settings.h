@@ -14,11 +14,9 @@ public:
 	static inline bool bEnableWeaponParry = true;
 	static inline bool bEnableShieldParry = true;
 	static inline bool bEnableNPCParry = true;
+	static inline bool bSuccessfulParryNoCost = true;
 
-	static inline float fParryStaminaRecovery = 0;
-
-
-	static inline bool bEnableSlowTimeEffect = true;
+	static inline bool bEnableSlowTimeEffect = false;
 	static inline bool bEnableScreenShakeEffect = true;
 	static inline bool bEnableParrySparkEffect = true;
 	static inline bool bEnableParrySoundEffect = true;

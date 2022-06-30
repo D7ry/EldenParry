@@ -1,20 +1,22 @@
 #include "Hooks.h"
 #include "EldenParry.h"
+#include "AnimEventHandler.h"
 void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type) {
 		// Skyrim lifecycle events.
 	case SKSE::MessagingInterface::kPostLoad:  // Called after all plugins have finished running SKSEPlugin_Load.
 		// It is now safe to do multithreaded operations, or operations against other plugins.
-		Hooks::install();
 	case SKSE::MessagingInterface::kPostPostLoad:  // Called after all kPostLoad message handlers have run.
 
 	case SKSE::MessagingInterface::kInputLoaded:   // Called when all game data has been found.
 		break;
 	case SKSE::MessagingInterface::kDataLoaded:  // All ESM/ESL/ESP plugins have loaded, main menu is now active.
-		// It is now safe to access form data.
+		// It is now safe to access form data.s
 		EldenParry::GetSingleton()->init();
-		Settings::readSettings();
+		if (Settings::bSuccessfulParryNoCost) {
+			animEventHandler::Register(true, Settings::bEnableNPCParry);
+		}
 		break;
 
 		// Skyrim game events.
@@ -107,8 +109,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 		return false;
 	}
 
-	//Do stuff when SKSE initializes here:
 
+	//Do stuff when SKSE initializes here:
+	Settings::readSettings();
+	Hooks::install();
 
 	return true;
 }

@@ -106,7 +106,6 @@ bool EldenParry::canParry(RE::Actor* a_parrier, RE::Projectile* a_proj) {
 bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 {
 	if (canParry(a_parrier, a_attacker)) {
-		inlineUtils::restoreav(a_parrier, RE::ActorValue::kStamina, Settings::fParryStaminaRecovery);
 		playParryEffects(a_parrier);
 		Utils::triggerStagger(a_parrier, a_attacker, 10);
 		if (Settings::facts::isValhallaCombatAPIObtained) {
@@ -115,6 +114,7 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 		if (a_parrier->IsPlayerRef()) {
 			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fMeleeParryExp);
 		}
+		negateParryCost(a_parrier);
 		return true;
 	}
 
@@ -141,7 +141,7 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 		Utils::resetProjectileOwner(a_projectile, a_parrier, a_projectile_collidable);
 
 		if (shooter && shooter->Is3DLoaded()) {
-			Utils::DeflectProjectile(a_parrier, a_projectile, shooter);
+			Utils::RetargetProjectile(a_parrier, a_projectile, shooter);
 		} else {
 			Utils::ReflectProjectile(a_projectile);
 		}
@@ -150,6 +150,7 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 		if (a_parrier->IsPlayerRef()) {
 			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fProjectileParryExp);
 		}
+		negateParryCost(a_parrier);
 		return true;
 	}
 	return false;
@@ -180,6 +181,35 @@ void EldenParry::playParryEffects(RE::Actor* a_parrier) {
 
 void EldenParry::updateBashButtonHeldTime(float a_time) {
 	_bashButtonHeldTime = a_time;
+}
+
+using uniqueLocker = std::unique_lock<std::shared_mutex>;
+using sharedLocker = std::shared_lock<std::shared_mutex>;
+
+void EldenParry::applyParryCost(RE::Actor* a_actor) {
+	//logger::info("apply parry cost for {}", a_actor->GetName());
+	{
+		uniqueLocker lock(mtx_parryCostQueue);
+		sharedLocker lock2(mtx_parrySuccessActors);
+		if (_parryCostQueue.contains(a_actor) && !_parrySuccessActors.contains(a_actor)) {
+			inlineUtils::damageAv(a_actor, RE::ActorValue::kStamina, _parryCostQueue[a_actor]);
+			_parryCostQueue.erase(a_actor);
+		}
+	}
+	uniqueLocker lock(mtx_parrySuccessActors);
+	_parrySuccessActors.erase(a_actor);
+}
+
+void EldenParry::cacheParryCost(RE::Actor* a_actor, float a_cost) {
+	//logger::info("cache parry cost for {}: {}", a_actor->GetName(), a_cost);
+	uniqueLocker lock(mtx_parryCostQueue);
+	_parryCostQueue[a_actor] = a_cost;
+}
+
+void EldenParry::negateParryCost(RE::Actor* a_actor) {
+	//logger::info("negate parry cost for {}", a_actor->GetName());
+	uniqueLocker lock(mtx_parrySuccessActors);
+	_parrySuccessActors.insert(a_actor);
 }
 
 PRECISION_API::PreHitCallbackReturn EldenParry::precisionPrehitCallbackFunc(const PRECISION_API::PrecisionHitData& a_precisionHitData) {

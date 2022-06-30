@@ -197,7 +197,6 @@ public:
 	static void resetProjectileOwner(RE::Projectile* a_projectile, RE::Actor* a_actor, RE::hkpCollidable* a_projectile_collidable)
 	{
 		a_projectile->SetActorCause(a_actor->GetActorCause());
-		a_projectile->desiredTarget = a_actor->currentCombatTarget;
 		a_projectile->shooter = a_actor->GetHandle();
 		uint32_t a_collisionFilterInfo;
 		a_actor->GetCollisionFilterInfo(a_collisionFilterInfo);
@@ -279,12 +278,13 @@ public:
 		pos = targetPoint->world.translate;
 	}
 
-	/*Deflect this projectile, aiming it at a_target.*/
-	static void DeflectProjectile(RE::Actor* a_actor, RE::Projectile* a_projectile, RE::TESObjectREFR* a_target)
+	/*retarget this projectile to a_target.*/
+	static void RetargetProjectile(RE::Actor* a_actor, RE::Projectile* a_projectile, RE::TESObjectREFR* a_target)
 	{
+		a_projectile->desiredTarget = a_target;
 
 		auto projectileNode = a_projectile->Get3D2();
-		auto target = a_target->GetHandle();
+		auto targetHandle = a_target->GetHandle();
 
 		RE::NiPoint3 targetPos = a_target->GetPosition();
 		if (a_target->GetFormType() == RE::FormType::ActorCharacter) {
@@ -292,7 +292,7 @@ public:
 		}
 
 		RE::NiPoint3 targetVelocity;
-		target.get()->GetLinearVelocity(targetVelocity);
+		targetHandle.get()->GetLinearVelocity(targetVelocity);
 
 		float projectileGravity = 0.f;
 		if (auto ammo = a_projectile->ammoSource) {
@@ -432,7 +432,7 @@ namespace inlineUtils
 	}
 
 	
-	inline void restoreav(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
+	inline void restoreAv(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
 	{
 		if (a_val == 0) {
 			return;
@@ -442,6 +442,15 @@ namespace inlineUtils
 		}
 	}
 
+	inline void damageAv(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
+	{
+		if (a_val == 0) {
+			return;
+		}
+		if (a_actor) {
+			a_actor->As<RE::ActorValueOwner>()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, a_actorValue, -a_val);
+		}
+	}
 
 
 	typedef void(_fastcall* _shakeCamera)(float strength, RE::NiPoint3 source, float duration);
