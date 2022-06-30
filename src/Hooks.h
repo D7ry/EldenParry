@@ -16,7 +16,7 @@ namespace Hooks
 
 			REL::Relocation<uintptr_t> hook{ RELOCATION_ID(37650, 38603) };  //SE:627930 + 16E => 3BEC90 AE:64D350 + 171 => 3D6720
 #ifdef SKYRIM_SUPPORT_AE
-			_getHeavyAttackStaminaCost = trampoline.write_call<5>(hook.address() + 0x171, getAttackStaminaCost);
+			_getAttackStaminaCost = trampoline.write_call<5>(hook.address() + 0x171, getAttackStaminaCost);
 #else
 			_getAttackStaminaCost = trampoline.write_call<5>(hook.address() + 0x16E, getAttackStaminaCost);
 #endif
