@@ -25,12 +25,13 @@ RE::BSEventNotifyControl animEventHandler::HookedProcessEvent(RE::BSAnimationGra
 		return fn ? (this->*fn)(a_event, src) : RE::BSEventNotifyControl::kContinue;
 	}
 	std::string_view eventTag = a_event.tag.data();
-	if (a_event.holder->IsPlayerRef()) {
-		RE::ConsoleLog::GetSingleton()->Print(a_event.tag.data());
-	}
 	switch (hash(eventTag.data(), eventTag.size())) {
-	case "bashStart"_h:
-		EldenParry::GetSingleton()->startTimingParry((RE::Actor*)(a_event.holder));
+	case "blockStop"_h:
+		if (const_cast<RE::TESObjectREFR*>(a_event.holder)->As<RE::Actor>()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+			//RE::ConsoleLog::GetSingleton()->Print("starting timed parry for {}", a_event.holder->GetName());
+			EldenParry::GetSingleton()->startTimingParry((RE::Actor*)(a_event.holder));
+		}
+		break;
 	case "bashStop"_h:
 		auto EP = EldenParry::GetSingleton();
 		EP->applyParryCost((RE::Actor*)a_event.holder);

@@ -186,12 +186,15 @@ namespace Hooks
 			logger::info("Player update hook installed");
 		}
 
+
 	private:
+
 		static void Update(RE::PlayerCharacter* a_this, float a_delta)
 		{
 			EldenParry::GetSingleton()->update();
 			_Update(a_this, a_delta);
 		}
+		
 		static inline REL::Relocation<decltype(Update)> _Update;
 	};
 	static void install()

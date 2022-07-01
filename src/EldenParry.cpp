@@ -40,22 +40,45 @@ void EldenParry::init() {
 }
 
 void EldenParry::update() {
+	if (!_bUpdate) {
+		return;
+	}
+	//logger::info("update");
 	uniqueLocker lock(mtx_parryTimer);
+	//logger::info("1");
 	auto it = _parryTimer.begin();
+	if (it == _parryTimer.end()) {
+		_bUpdate = false;
+		//logger::info("2");
+		//logger::info("done");
+		return;
+	}
 	while (it != _parryTimer.end()) {
+		//logger::info("3");
 		if (!it->first) {
+			//logger::info("4");
 			it = _parryTimer.erase(it);
+			//logger::info("5");
 			continue;
 		}
 		if (it->second > Settings::fParryWindow_End) {
+			//logger::info("6");
 			it = _parryTimer.erase(it);
+			//RE::ConsoleLog::GetSingleton()->Print("Finish timing parry");
+			//logger::info("7");
 			continue;
 		}
-		it->second -= *Offsets::g_deltaTime;
+		//logger::info("8");
+		it->second += *Offsets::g_deltaTime;
+		//logger::info("9");
+		it++;
 	}
+	//logger::info("done");
 }
 
 void EldenParry::startTimingParry(RE::Actor* a_actor) {
+	//RE::ConsoleLog::GetSingleton()->Print("Start timing parry");
+	logger::info("start timing parry...");
 	uniqueLocker lock(mtx_parryTimer);
 	auto it = _parryTimer.find(a_actor);
 	if (it != _parryTimer.end()) {
@@ -63,11 +86,15 @@ void EldenParry::startTimingParry(RE::Actor* a_actor) {
 	} else {
 		_parryTimer.insert({a_actor, 0.0f});
 	}
+	
+	_bUpdate = true;
+	logger::info("done");
 }
 
 void EldenParry::finishTimingParry(RE::Actor* a_actor) {
 	uniqueLocker lock(mtx_parryTimer);
 	_parryTimer.erase(a_actor);
+	//RE::ConsoleLog::GetSingleton()->Print("Finish timing parry");
 }
 
 /// <summary>
@@ -91,6 +118,7 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 	sharedLocker lock(mtx_parryTimer);
 	auto it = _parryTimer.find(a_actor);
 	if (it != _parryTimer.end()) {
+		//logger::info("Parried by {}, time: {}", a_actor->GetName(), it->second);
 		return it->second >= Settings::fParryWindow_Start;
 	}
 	return false;

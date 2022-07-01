@@ -65,6 +65,8 @@ private:
 	mutable std::shared_mutex mtx_parryCostQueue;
 	mutable std::shared_mutex mtx_parrySuccessActors;
 	mutable std::shared_mutex mtx_parryTimer;
+
+	bool _bUpdate;
 };
 
 
