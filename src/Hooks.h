@@ -54,20 +54,30 @@ namespace Hooks
 		static inline bool shouldIgnoreHit(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr)
 		{
 			//for aggressor: cancle parry hitframe.
-			if (a_aggressor->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash && !inlineUtils::isPowerAttacking(a_aggressor)) {
-				if (a_aggressor->IsPlayerRef() || Settings::bEnableNPCParry) {
-					if (Utils::isEquippedShield(a_aggressor)) {
-						if (Settings::bEnableShieldParry) {
+			
+			if (a_aggressor->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+				bool isAggressorShieldEquipped = Utils::isEquippedShield(a_aggressor);
+				if (!inlineUtils::isPowerAttacking(a_aggressor)) {
+					if (a_aggressor->IsPlayerRef() || Settings::bEnableNPCParry) {
+						if ((isAggressorShieldEquipped && Settings::bEnableShieldParry) || Settings::bEnableWeaponParry) {
 							return true;
-						}
-					} else if (Settings::bEnableWeaponParry) {
-						return true;
+						} 
+					}
+				} else {//is power bash
+					if (a_aggressor->IsPlayerRef() || Settings::bEnableNPCParry) {
+						if ((isAggressorShieldEquipped && Settings::bEnableShieldGuardBash) || Settings::bEnableWeaponGuardBash) {
+							EldenParry::GetSingleton()->processGuardBash(a_aggressor, a_victim);
+						} 
 					}
 				}
-			}
-			//for vicitm: process parry.
-			if (EldenParry::GetSingleton()->processMeleeParry(a_aggressor, a_victim)) {
-				return true;
+				
+			} else if (a_victim->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+				if (a_victim->IsPlayerRef() || Settings::bEnableNPCParry) {
+					bool isDefenderShieldEquipped = Utils::isEquippedShield(a_victim);
+					if ((isDefenderShieldEquipped && Settings::bEnableShieldParry) || Settings::bEnableWeaponParry) {
+						return EldenParry::GetSingleton()->processMeleeParry(a_aggressor, a_victim);
+					}
+				}
 			}
 			return false;
 		}
@@ -78,15 +88,7 @@ namespace Hooks
 			}
 			_ProcessHit(a_aggressor, a_victim, a_int1, a_bool, a_unkptr);
 		}
-		static void processHit1(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr)
-		{
-			if (shouldIgnoreHit(a_aggressor, a_victim, a_int1, a_bool, a_unkptr)) {
-				return;
-			}
-			_ProcessHit1(a_aggressor, a_victim, a_int1, a_bool, a_unkptr);
-		}
 		static inline REL::Relocation<decltype(processHit)> _ProcessHit;
-		static inline REL::Relocation<decltype(processHit1)> _ProcessHit1;
 	};
 
 	class AttackBlockHandler
@@ -105,10 +107,10 @@ namespace Hooks
 
 			if (pc && pc->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash && a_event->QUserEvent() == "Right Attack/Block") {
 				if (a_event->IsHeld()) {
-					EldenParry::GetSingleton()->updateBashButtonHeldTime(a_event->HeldDuration());
+					//EldenParry::GetSingleton()->updateBashButtonHeldTime(a_event->HeldDuration());
 				}
 				if (a_event->IsUp()) {
-					EldenParry::GetSingleton()->updateBashButtonHeldTime(0);
+					//EldenParry::GetSingleton()->updateBashButtonHeldTime(0);
 				}
 			}
 			_ProcessButton(a_this, a_event, a_data);
@@ -136,11 +138,19 @@ namespace Hooks
 				for (auto& hit : a_AllCdPointCollector->hits) {
 					auto refrA = RE::TESHavokUtilities::FindCollidableRef(*hit.rootCollidableA);
 					auto refrB = RE::TESHavokUtilities::FindCollidableRef(*hit.rootCollidableB);
-					if (refrA && refrA->formType == RE::FormType::ActorCharacter) {
-						return EldenParry::GetSingleton()->processProjectileParry(refrA->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableB));
+					if (refrA && refrA->formType == RE::FormType::ActorCharacter && refrA->As<RE::Actor>()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+						if (refrA->IsPlayerRef() || Settings::bEnableNPCParry) {
+							if ((a_projectile->spell && Settings::bEnableMagicProjectileDeflection) || Settings::bEnableArrowProjectileDeflection) {
+								return EldenParry::GetSingleton()->processProjectileParry(refrA->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableB));
+							}
+						}
 					}
-					if (refrB && refrB->formType == RE::FormType::ActorCharacter) {
-						return EldenParry::GetSingleton()->processProjectileParry(refrB->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableA));
+					if (refrB && refrB->formType == RE::FormType::ActorCharacter && refrB->As<RE::Actor>()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+						if (refrB->IsPlayerRef() || Settings::bEnableNPCParry) {
+							if ((a_projectile->spell && Settings::bEnableMagicProjectileDeflection) || Settings::bEnableArrowProjectileDeflection) {
+								return EldenParry::GetSingleton()->processProjectileParry(refrA->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableA));
+							}
+						}
 					}
 				}
 			}
@@ -164,6 +174,26 @@ namespace Hooks
 		static inline REL::Relocation<decltype(OnArrowCollision)> _arrowCollission;
 		static inline REL::Relocation<decltype(OnMissileCollision)> _missileCollission;
 	};
+
+	class PlayerUpdate  //no longer used
+	{
+	public:
+		static void install()
+		{
+			REL::Relocation<std::uintptr_t> PlayerCharacterVtbl{ RE::VTABLE_PlayerCharacter[0] };
+
+			_Update = PlayerCharacterVtbl.write_vfunc(0xAD, Update);
+			logger::info("Player update hook installed");
+		}
+
+	private:
+		static void Update(RE::PlayerCharacter* a_this, float a_delta)
+		{
+			EldenParry::GetSingleton()->update();
+			_Update(a_this, a_delta);
+		}
+		static inline REL::Relocation<decltype(Update)> _Update;
+	};
 	static void install()
 	{
 		//SKSE::AllocTrampoline(1 << 4);
@@ -171,7 +201,7 @@ namespace Hooks
 		if (Settings::bSuccessfulParryNoCost) {
 			Hook_getAttackStaminaCost::install();
 		}
-		AttackBlockHandler::install();
+		PlayerUpdate::install();
 		MeleeCollision::install();
 		ProjectileCollision::install();
 	}

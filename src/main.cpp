@@ -14,9 +14,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 	case SKSE::MessagingInterface::kDataLoaded:  // All ESM/ESL/ESP plugins have loaded, main menu is now active.
 		// It is now safe to access form data.s
 		EldenParry::GetSingleton()->init();
-		if (Settings::bSuccessfulParryNoCost) {
-			animEventHandler::Register(true, Settings::bEnableNPCParry);
-		}
+		animEventHandler::Register(true, Settings::bEnableNPCParry);
 		break;
 
 		// Skyrim game events.

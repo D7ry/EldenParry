@@ -1,7 +1,8 @@
 #include "EldenParry.h"
 #include "Settings.h"
 #include "Utils.hpp"
-
+using uniqueLocker = std::unique_lock<std::shared_mutex>;
+using sharedLocker = std::shared_lock<std::shared_mutex>;
 
 void EldenParry::init() {
 	INFO("Obtaining precision API...");
@@ -37,6 +38,38 @@ void EldenParry::init() {
 	_GMST_fCombatHitConeAngle = RE::GameSettingCollection::GetSingleton()->GetSetting("fCombatHitConeAngle")->GetFloat();
 	_parryAngle = _GMST_fCombatHitConeAngle;
 }
+
+void EldenParry::update() {
+	uniqueLocker lock(mtx_parryTimer);
+	auto it = _parryTimer.begin();
+	while (it != _parryTimer.end()) {
+		if (!it->first) {
+			it = _parryTimer.erase(it);
+			continue;
+		}
+		if (it->second > Settings::fParryWindow_End) {
+			it = _parryTimer.erase(it);
+			continue;
+		}
+		it->second -= *Offsets::g_deltaTime;
+	}
+}
+
+void EldenParry::startTimingParry(RE::Actor* a_actor) {
+	uniqueLocker lock(mtx_parryTimer);
+	auto it = _parryTimer.find(a_actor);
+	if (it != _parryTimer.end()) {
+		it->second = 0;
+	} else {
+		_parryTimer.insert({a_actor, 0.0f});
+	}
+}
+
+void EldenParry::finishTimingParry(RE::Actor* a_actor) {
+	uniqueLocker lock(mtx_parryTimer);
+	_parryTimer.erase(a_actor);
+}
+
 /// <summary>
 /// Check if the object is in the blocker's blocking angle.
 /// </summary>
@@ -53,53 +86,19 @@ bool EldenParry::inBlockAngle(RE::Actor* a_blocker, RE::TESObjectREFR* a_obj)
 /// </summary>
 /// <param name="a_actor"></param>
 /// <returns></returns>
-bool EldenParry::inParryState(RE::Actor* a_actor, bool projectileParry)
+bool EldenParry::inParryState(RE::Actor* a_actor)
 {
-	if (a_actor->IsPlayerRef()) {
-		if (projectileParry) {
-			if (_bashButtonHeldTime > Settings::fParryTimeWindow_Projectile) {
-				return false;
-			}
-		} else {
-			if (_bashButtonHeldTime > Settings::fParryTimeWindow) {
-				return false;
-			}
-		}
-	} else if (!Settings::bEnableNPCParry) {
-		return false;
+	sharedLocker lock(mtx_parryTimer);
+	auto it = _parryTimer.find(a_actor);
+	if (it != _parryTimer.end()) {
+		return it->second >= Settings::fParryWindow_Start;
 	}
-	if (a_actor->GetAttackState() != RE::ATTACK_STATE_ENUM::kBash) {  //parrier has to be bashing
-		return false;
-	}
-	if (Utils::isEquippedShield(a_actor)) {  //check settings conditions
-		if (!Settings::bEnableShieldParry) {
-			return false;
-		}
-	} else {
-		if (!Settings::bEnableWeaponParry) {
-			return false;
-		}
-	}
-
-	return true;
+	return false;
 }
 
-bool EldenParry::canParry(RE::Actor* a_parrier, RE::Actor* a_attacker)
+bool EldenParry::canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj)
 {
-	return inParryState(a_parrier, false) && inBlockAngle(a_parrier, a_attacker);
-}
-
-bool EldenParry::canParry(RE::Actor* a_parrier, RE::Projectile* a_proj) {
-	if (a_proj->spell) {
-		if (!Settings::bEnableMagicProjectileDeflection) {
-			return false;
-		}
-	} else {
-		if (!Settings::bEnableArrowProjectileDeflection) {
-			return false;
-		}
-	}
-	return inParryState(a_parrier, true) && inBlockAngle(a_parrier, a_proj);
+	return inParryState(a_parrier) && inBlockAngle(a_parrier, a_obj);
 }
 
 
@@ -157,6 +156,16 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 
 }
 
+void EldenParry::processGuardBash(RE::Actor* a_basher, RE::Actor* a_blocker)
+{
+	if (!a_blocker->IsBlocking() || !inBlockAngle(a_blocker, a_basher) || a_blocker->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+		return;
+	}
+	Utils::triggerStagger(a_basher, a_blocker, 5);
+	playGuardBashEffects(a_basher);
+	RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fGuardBashExp);
+}
+
 void EldenParry::playParryEffects(RE::Actor* a_parrier) {
 	if (Settings::bEnableParrySoundEffect) {
 		if (Utils::isEquippedShield(a_parrier)) {
@@ -179,9 +188,6 @@ void EldenParry::playParryEffects(RE::Actor* a_parrier) {
 	
 }
 
-void EldenParry::updateBashButtonHeldTime(float a_time) {
-	_bashButtonHeldTime = a_time;
-}
 
 using uniqueLocker = std::unique_lock<std::shared_mutex>;
 using sharedLocker = std::shared_lock<std::shared_mutex>;
@@ -212,6 +218,23 @@ void EldenParry::negateParryCost(RE::Actor* a_actor) {
 	//logger::info("negate parry cost for {}", a_actor->GetName());
 	uniqueLocker lock(mtx_parrySuccessActors);
 	_parrySuccessActors.insert(a_actor);
+}
+
+void EldenParry::playGuardBashEffects(RE::Actor* a_actor) {
+	if (Settings::bEnableParrySoundEffect) {
+			Utils::playSound(a_actor, _parrySound_shd);
+	}
+	if (Settings::bEnableParrySparkEffect) {
+		blockSpark::playBlockSpark(a_actor);
+	}
+	if (a_actor->IsPlayerRef()) {
+		if (Settings::bEnableSlowTimeEffect) {
+			Utils::slowTime(0.2f, 0.3f);
+		}
+		if (Settings::bEnableScreenShakeEffect) {
+			inlineUtils::shakeCamera(1.5, a_actor->GetPosition(), 0.4f);
+		}
+	}
 }
 
 PRECISION_API::PreHitCallbackReturn EldenParry::precisionPrehitCallbackFunc(const PRECISION_API::PrecisionHitData& a_precisionHitData) {
