@@ -32,16 +32,16 @@ this turns the late game combat into:
 
 This will happen despite all the combat <br>
 overhaul mods you may have installed.
-﻿
+
 <br>
 <br>
 
 ## This Mod
 
 Light bashes no longer have a hit frame. <br>
-This means doing a light bash alone﻿ will <br>
+This means doing a light bash alone will <br>
 not hit and stagger an enemy.
-﻿﻿
+
 
 <video width = 400 loop autoplay>
   <source src = 'Resources/No%20Light%20Bash%20Spamming.mp4' type = video/mp4 >
@@ -54,7 +54,7 @@ When you bash while getting hit, you parry <br>
 the incoming attack and stagger the attacker.
 
 Successful parries do not cost stamina.
-﻿﻿
+
 
 <video width = 400 loop autoplay>
   <source src = 'Resources/Parry%20Precision.mp4' type = video/mp4 >
@@ -67,6 +67,8 @@ deflects it back at the enemy.
 <video width = 400 loop autoplay>
   <source src = 'Resources/Magic%20Projectiles.mp4' type = video/mp4 >
 </video>
+
+![](https://github.com/ElectronicsArchiver/EldenParry/Resources/Magic%20Projectiles.mp4)
 
 Works for magic projectiles like fireballs, ice spikes, etc. as well.
 
@@ -91,7 +93,7 @@ but it will spice things up a lot, and it feels great in both <br>
    width = 400
   />
 </a>
-﻿
+
 <br>
 <br>
 
