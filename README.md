@@ -42,11 +42,7 @@ Light bashes no longer have a hit frame. <br>
 This means doing a light bash alone will <br>
 not hit and stagger an enemy.
 
-
-<video width = 400 loop autoplay>
-  <source src = 'Resources/No%20Light%20Bash%20Spamming.mp4' type = video/mp4 >
-</video>
-
+![No Light Bash Spamming]
 
 Light bash is now turned into 'parry'.
 
@@ -55,18 +51,13 @@ the incoming attack and stagger the attacker.
 
 Successful parries do not cost stamina.
 
-
-<video width = 400 loop autoplay>
-  <source src = 'Resources/Parry%20Precision.mp4' type = video/mp4 >
-</video>
-
+![Parry Precision]
 
 Parrying an incoming projectile <br>
 deflects it back at the enemy.
 
-<video width = 400 loop autoplay>
-  <source src = 'Resources/Magic%20Projectiles.mp4' type = video/mp4 >
-</video>
+![Magic Projectiles]
+
 
 ![](https://github.com/ElectronicsArchiver/EldenParry/Resources/Magic%20Projectiles.mp4)
 
@@ -107,7 +98,7 @@ paired with a **ESL** to store some sound records.
 ## Settings
 
 The mod comes with an `.ini` file in which you can tweak <br>
-some settings for this mod to better suit your loudout.
+some settings for this mod to better suit your loadout.
 
 You can disable weapon / shield parry or projectile parry, <br>
 as well as tweak the visual feedback parrying does, <br>
@@ -162,3 +153,7 @@ the start and ending time of your parrying window.
 <!----------------------------------------------------------------------------->
 
 [Better God Modes]: https://www.nexusmods.com/skyrimspecialedition/mods/69839
+
+[No Light Bash Spamming]: Resources/No%20Light%20Bash%20Spamming.gif
+[Magic Projectiles]: Resources/Magic%20Projectiles.gif
+[Parry Precision]: Resources/Parry%20Precision.gif
