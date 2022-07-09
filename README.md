@@ -5,6 +5,14 @@
 
 *A mod that adds parrying to **Skyrim**.*
 
+<br>
+
+---
+
+[![Button Nexus]][Nexus]   
+[![Button FAQ]][FAQ]
+
+---
 
 <br>
 <br>
@@ -167,3 +175,12 @@ the start and ending time of your parrying window.
 [No Light Bash Spamming]: Resources/No%20Light%20Bash%20Spamming.gif
 [Magic Projectiles]: Resources/Magic%20Projectiles.gif
 [Parry Precision]: Resources/Parry%20Precision.gif
+
+[Nexus]: https://www.nexusmods.com/skyrimspecialedition/mods/70240
+[FAQ]: Documentation/FAQ.md
+
+
+<!-------------------------------[ Buttons ]----------------------------------->
+
+[Button Nexus]: https://img.shields.io/badge/ＮｅｘｕｓMods-57a5cc?style=for-the-badge&logoColor=white&logo=Dragonframe
+[Button FAQ]: https://img.shields.io/badge/FAQ-428813?style=for-the-badge&logoColor=white&logo=AskUbuntu
