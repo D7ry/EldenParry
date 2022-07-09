@@ -16,8 +16,7 @@
   />
 </a>
 
-</div>
-
+<br>
 <br>
 <br>
 
@@ -42,7 +41,11 @@ Light bashes no longer have a hit frame. <br>
 This means doing a light bash alone will <br>
 not hit and stagger an enemy.
 
+<br>
+
 ![No Light Bash Spamming]
+
+<br>
 
 Light bash is now turned into 'parry'.
 
@@ -51,15 +54,20 @@ the incoming attack and stagger the attacker.
 
 Successful parries do not cost stamina.
 
+<br>
+
 ![Parry Precision]
+
+<br>
 
 Parrying an incoming projectile <br>
 deflects it back at the enemy.
 
+<br>
+
 ![Magic Projectiles]
 
-
-![](https://github.com/ElectronicsArchiver/EldenParry/Resources/Magic%20Projectiles.mp4)
+<br>
 
 Works for magic projectiles like fireballs, ice spikes, etc. as well.
 
@@ -77,6 +85,7 @@ This won't fundamentally change Skyrim's combat feel, <br>
 but it will spice things up a lot, and it feels great in both <br>
 1st and 3rd person.
 
+<br>
 
 <a href = 'https://youtu.be/-Vcc2XaTdDQ'>
   <img
@@ -91,6 +100,7 @@ but it will spice things up a lot, and it feels great in both <br>
 Everything is done through a lightweight **SKSE Plugin** <br>
 paired with a **ESL** to store some sound records. 
 
+</div>
 
 <br>
 <br>
