@@ -102,26 +102,35 @@ private:
 		a_matrix.entry[2][2] = cb;
 	}
 
-	static bool PredictAimProjectile(RE::NiPoint3 a_projectilePos, RE::NiPoint3 a_targetPosition, RE::NiPoint3 a_targetVelocity, float a_gravity, RE::NiPoint3& a_projectileVelocity)
-	{
-		// http://ringofblades.com/Blades/Code/PredictiveAim.cs
+
+	// http://ringofblades.com/Blades/Code/PredictiveAim.cs
+
+	static bool PredictAimProjectile(
+		RE::NiPoint3 projectilePos ,
+		RE::NiPoint3 targetPosition ,
+		RE::NiPoint3 targetVelocity ,
+		float gravity ,
+		RE::NiPoint3 & projectileVelocity
+	){
+
+		if(projectilePos == targetPosition)
+			return false;
+
 
 		float 
-			projectileSpeedSquared = a_projectileVelocity.SqrLength() ,
+			projectileSpeedSquared = projectileVelocity.SqrLength() ,
 			projectileSpeed = std::sqrtf(projectileSpeedSquared) ;
 
 		if(projectileSpeed <= 0.f)
 			return false;
-			
-		if(a_projectilePos == a_targetPosition)
-			return false;
+
 
 		float 
 			targetSpeedSquared = a_targetVelocity.SqrLength() ,
 			targetSpeed = std::sqrtf(targetSpeedSquared) ;
 		
 		RE::NiPoint3 targetToProjectile = 
-			a_projectilePos - a_targetPosition;
+			projectilePos - targetPosition;
 		
 		float 
 			distanceSquared = targetToProjectile.SqrLength() ,
@@ -131,7 +140,7 @@ private:
 
 		direction.Unitize();
 		
-		RE::NiPoint3 targetVelocityDirection = a_targetVelocity;
+		RE::NiPoint3 targetVelocityDirection = targetVelocity;
 		
 		targetVelocityDirection.Unitize();
 
@@ -143,10 +152,12 @@ private:
 		
 		float t;
 
-		if (ApproximatelyEqual(projectileSpeedSquared, targetSpeedSquared)) {
+		if(ApproximatelyEqual(projectileSpeedSquared,targetSpeedSquared)){
+			
 			// We want to avoid div/0 that can result from target and projectile traveling at the same speed
 			//We know that cos(theta) of zero or less means there is no solution, since that would mean B goes backwards or leads to div/0 (infinity)
-			if (cosTheta > 0) {
+			
+			if(cosTheta > 0){
 				t = 0.5f * distance / (targetSpeed * cosTheta);
 			} else {
 				bValidSolutionFound = false;
@@ -157,11 +168,11 @@ private:
 			float 
 				a = projectileSpeedSquared - targetSpeedSquared ,
 				b = 2.0f * distance * targetSpeed * cosTheta ,
-				c = -distanceSquared ;
+				c = - distanceSquared ;
 
 			float discriminant = b * b - 4.0f * a * c;
 
-			if (discriminant < 0) {
+			if(discriminant < 0){
 				// NaN
 				bValidSolutionFound = false;
 				t = 1;
@@ -171,8 +182,9 @@ private:
 				
 				float 
 					uglyNumber = sqrtf(discriminant) ,
-					t0 = 0.5f * (-b + uglyNumber) / a ,
-					t1 = 0.5f * (-b - uglyNumber) / a ;
+					t0 = 0.5f * (- b + uglyNumber) / a ,
+					t1 = 0.5f * (- b - uglyNumber) / a ;
+
 
 				// Assign the lowest positive time to t to aim at the earliest hit
 				
@@ -181,26 +193,31 @@ private:
 				if(t < FLT_EPSILON)
 					t = max(t0,t1);
 
-				if (t < FLT_EPSILON) {
-					// Time can't flow backwards when it comes to aiming.
-					// No real solution was found, take a wild shot at the target's future location
+
+				// Time can't flow backwards when it comes to aiming.
+				// No real solution was found, take a wild shot at the target's future location
+
+				if(t < FLT_EPSILON){
 					bValidSolutionFound = false;
 					t = 1;
 				}
 			}
 		}
 
-		a_projectileVelocity = a_targetVelocity + (-targetToProjectile / t);
+		projectileVelocity = targetVelocity + (- targetToProjectile / t);
 
-		if (!bValidSolutionFound) {
-			a_projectileVelocity.Unitize();
-			a_projectileVelocity *= projectileSpeed;
+		if(!bValidSolutionFound){
+			projectileVelocity.Unitize();
+			projectileVelocity *= projectileSpeed;
 		}
 
-		if (!ApproximatelyEqual(a_gravity, 0.f)) {
-			float netFallDistance = (a_projectileVelocity * t).z;
-			float gravityCompensationSpeed = (netFallDistance + 0.5f * a_gravity * t * t) / t;
-			a_projectileVelocity.z = gravityCompensationSpeed;
+		if(!ApproximatelyEqual(gravity,0.f)){
+
+			float 
+				netFallDistance = (projectileVelocity * t).z ,
+				gravityCompensationSpeed = (netFallDistance + 0.5f * gravity * t * t) / t ;
+			
+			projectileVelocity.z = gravityCompensationSpeed;
 		}
 
 		return bValidSolutionFound;
@@ -209,9 +226,13 @@ private:
 
 
 public:
-	static void triggerStagger(RE::Actor* a_aggressor, RE::Actor* a_reactor, float a_reactionMagnitude)
-	{
-		auto headingAngle = a_reactor->GetHeadingAngle(a_aggressor->GetPosition(), false);
+
+	static void triggerStagger(
+		RE::Actor * aggressor ,
+		RE::Actor * reactor ,
+		float reactionMagnitude
+	){
+		auto headingAngle = reactor -> GetHeadingAngle(aggressor -> GetPosition(),false);
 		
 		auto direction = headingAngle;
 		
@@ -220,10 +241,11 @@ public:
 			
 		headingAngle /= 360.0f;
 
-		a_reactor->SetGraphVariableFloat(staggerDirection, direction);
-		a_reactor->SetGraphVariableFloat(StaggerMagnitude, a_reactionMagnitude);
-		a_reactor->NotifyAnimationGraph(staggerStart);
+		a_reactor -> SetGraphVariableFloat(staggerDirection,direction);
+		a_reactor -> SetGraphVariableFloat(StaggerMagnitude,reactionMagnitude);
+		a_reactor -> NotifyAnimationGraph(staggerStart);
 	}
+
 
 	static bool isEquippedShield(RE::Actor * actor){
 
@@ -231,6 +253,7 @@ public:
 		
 		return object && object -> IsArmor();
 	}
+
 
 	static void resetProjectileOwner(
 		RE::Projectile * projectile ,
@@ -246,6 +269,7 @@ public:
 		collidable -> broadPhaseHandle.collisionFilterInfo &= (0x0000FFFF);
 		collidable -> broadPhaseHandle.collisionFilterInfo |= (info << 16);
 	}
+
 
 	inline static void PushActorAway(
 		RE::Actor * origin ,
@@ -280,7 +304,6 @@ public:
 		
 		* (uint32_t *) & handle.state = 0;
 
-
 		soundHelper_a(RE::BSAudioManager::GetSingleton(),& handle,descriptor -> GetFormID(),16);
 
 		auto location = actor -> data.location;
@@ -291,33 +314,42 @@ public:
 		}
 	}
 
-	static void playSound(RE::Actor* a, std::vector<RE::BGSSoundDescriptorForm*> sounds)
-	{
-		playSound(a, *select_randomly(sounds.begin(), sounds.end()));
+
+	static void playSound(
+		RE::Actor * actor ,
+		std::vector<RE::BGSSoundDescriptorForm *> sounds
+	){
+		playSound(actor,* select_randomly(sounds.begin(),sounds.end()));
 	}
 		
-	static void ReflectProjectile(RE::Projectile* a_projectile)
-	{
-		a_projectile->linearVelocity *= -1.f;
+
+	static void ReflectProjectile(RE::Projectile * projectile){
+		
+		projectile -> linearVelocity *= -1.f;
 
 		// rotate model
-		auto projectileNode = a_projectile->Get3D2();
-		if (projectileNode) {
-			RE::NiPoint3 direction = a_projectile->linearVelocity;
+		
+		auto projectileNode = projectile -> Get3D2();
+		
+		if(projectileNode){
+
+			RE::NiPoint3 direction = projectile -> linearVelocity;
+
 			direction.Unitize();
 
-			a_projectile->data.angle.x = asin(direction.z);
-			a_projectile->data.angle.z = atan2(direction.x, direction.y);
+			projectile -> data.angle.x = asin(direction.z);
+			projectile -> data.angle.z = atan2(direction.x,direction.y);
 
-			if (a_projectile->data.angle.z < 0.0) {
-				a_projectile->data.angle.z += PI;
-			}
+			if(projectile -> data.angle.z < 0.0)
+				projectile -> data.angle.z += PI;
 
-			if (direction.x < 0.0) {
-				a_projectile->data.angle.z += PI;
-			}
+			if(direction.x < 0.0)
+				projectile -> data.angle.z += PI;
 
-			Utils::SetRotationMatrix(projectileNode->local.rotate, -direction.x, direction.y, direction.z);
+			Utils::SetRotationMatrix(
+				projectileNode -> local.rotate ,
+				- direction.x , direction.y , direction.z
+			);
 		}
 	}
 
@@ -339,8 +371,9 @@ public:
 		if(!bodyPart)
 			return;
 		
-		auto name = bodyPart -> targetName.c_str();
-		auto point = actor -> GetNodeByName(name);
+		auto 
+			name = bodyPart -> targetName.c_str() ,
+			point = actor -> GetNodeByName(name) ;
 		
 		if(!point)
 			return;
@@ -349,71 +382,98 @@ public:
 	}
 
 
-	/*retarget this projectile to a_target.*/
-	static void RetargetProjectile(RE::Actor* a_actor, RE::Projectile* a_projectile, RE::TESObjectREFR* a_target)
-	{
-		a_projectile->desiredTarget = a_target;
+	/**
+	 *	@brief Retarget this projectile to a_target.
+	 */
 
-		auto projectileNode = a_projectile->Get3D2();
-		auto targetHandle = a_target->GetHandle();
+	static void RetargetProjectile(
+		RE::Actor * actor ,
+		RE::Projectile * projectile ,
+		RE::TESObjectREFR * target
+	){
+		projectile -> desiredTarget = target;
 
-		RE::NiPoint3 targetPos = a_target->GetPosition();
-		if (a_target->GetFormType() == RE::FormType::ActorCharacter) {
-			getBodyPos(a_target->As<RE::Actor>(), targetPos);
-		}
+		auto projectileNode = projectile -> Get3D2();
+		auto targetHandle = target -> GetHandle();
+
+		RE::NiPoint3 targetPos = target -> GetPosition();
+
+		if(target -> GetFormType() == RE::FormType::ActorCharacter)
+			getBodyPos(target -> As<RE::Actor>(),targetPos);
 
 		RE::NiPoint3 targetVelocity;
-		targetHandle.get()->GetLinearVelocity(targetVelocity);
+		targetHandle.get() -> GetLinearVelocity(targetVelocity);
 
 		float projectileGravity = 0.f;
-		if (auto ammo = a_projectile->ammoSource) {
-			if (auto bgsProjectile = ammo->data.projectile) {
-				projectileGravity = bgsProjectile->data.gravity;
-				if (auto bhkWorld = a_projectile->parentCell->GetbhkWorld()) {
-					if (auto hkpWorld = bhkWorld->GetWorld1()) {
-						auto vec4 = hkpWorld->gravity;
+
+		if(auto ammo = projectile -> ammoSource)
+			if(auto bgsProjectile = ammo -> data.projectile){
+				
+				projectileGravity = bgsProjectile -> data.gravity;
+				
+				if(auto bhkWorld = projectile -> parentCell -> GetbhkWorld())
+					if(auto hkpWorld = bhkWorld -> GetWorld1()){
+
+						auto vec4 = hkpWorld -> gravity;
+						
 						float quad[4];
+
 						_mm_store_ps(quad, vec4.quad);
-						float gravity = -quad[2] * RE::bhkWorld::GetWorldScaleInverse();
+						
+						float gravity = - quad[2] * RE::bhkWorld::GetWorldScaleInverse();
+						
 						projectileGravity *= gravity;
 					}
-				}
 			}
-		}
 
-		PredictAimProjectile(a_projectile->data.location, targetPos, targetVelocity, projectileGravity, a_projectile->linearVelocity);
+		PredictAimProjectile(
+			projectile -> data.location , 
+			targetPos , targetVelocity , 
+			projectileGravity , 
+			projectile -> linearVelocity
+		);
 
 		// rotate
-		RE::NiPoint3 direction = a_projectile->linearVelocity;
+		
+		RE::NiPoint3 direction = projectile -> linearVelocity;
+
 		direction.Unitize();
 
-		a_projectile->data.angle.x = asin(direction.z);
-		a_projectile->data.angle.z = atan2(direction.x, direction.y);
+		projectile -> data.angle.x = asin(direction.z);
+		projectile -> data.angle.z = atan2(direction.x,direction.y);
 
-		if (a_projectile->data.angle.z < 0.0) {
-			a_projectile->data.angle.z += PI;
-		}
+		if(projectile -> data.angle.z < 0.0)
+			projectile -> data.angle.z += PI;
 
-		if (direction.x < 0.0) {
-			a_projectile->data.angle.z += PI;
-		}
+		if(direction.x < 0.0)
+			projectile -> data.angle.z += PI;
 
-		SetRotationMatrix(projectileNode->local.rotate, -direction.x, direction.y, direction.z);
+		SetRotationMatrix(projectileNode -> local.rotate,-direction.x,direction.y,direction.z);
 	}
 
-	/*Slow down game time for a set period.
-	@param a_duration: duration of the slow time.
-	@param a_percentage: relative time speed to normal time(1).*/
-	static void slowTime(float a_duration, float a_percentage)
-	{
-		int duration_milisec = static_cast<int>(a_duration * 1000);
-		RE::BSTimer::setCurrentGlobalTimeMult(a_percentage);
-		/*Reset time here*/
-		auto resetSlowTime = [](int a_duration) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(a_duration));
+
+	/**
+	 *	@brief Slow down game time for a set period.
+	 * 
+	 *	@param a_duration Duration of the slow time.
+	 *	@param a_percentage Relative time speed to normal time(1).
+	 */
+
+	static void slowTime(float duration,float percentage){
+
+		int millis = static_cast<int>(duration * 1000);
+
+		RE::BSTimer::setCurrentGlobalTimeMult(percentage);
+		
+		/* Reset time here */
+		
+		auto resetSlowTime = [](int duration){
+			std::this_thread::sleep_for(std::chrono::milliseconds(duration));
 			RE::BSTimer::setCurrentGlobalTimeMult(1);
 		};
-		std::jthread resetThread(resetSlowTime, duration_milisec);
+
+		std::jthread resetThread(resetSlowTime,millis);
+		
 		resetThread.detach();
 	}
 };
