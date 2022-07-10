@@ -225,45 +225,69 @@ public:
 		a_reactor->NotifyAnimationGraph(staggerStart);
 	}
 
-	static bool isEquippedShield(RE::Actor* a_actor)
-	{
-		auto lhs = a_actor->GetEquippedObject(true);
-		return lhs && lhs->IsArmor();
+	static bool isEquippedShield(RE::Actor * actor){
+
+		auto object = actor -> GetEquippedObject(true);
+		
+		return object && object -> IsArmor();
 	}
 
-	static void resetProjectileOwner(RE::Projectile* a_projectile, RE::Actor* a_actor, RE::hkpCollidable* a_projectile_collidable)
-	{
-		a_projectile->SetActorCause(a_actor->GetActorCause());
-		a_projectile->shooter = a_actor->GetHandle();
-		uint32_t a_collisionFilterInfo;
-		a_actor->GetCollisionFilterInfo(a_collisionFilterInfo);
-		a_projectile_collidable->broadPhaseHandle.collisionFilterInfo &= (0x0000FFFF);
-		a_projectile_collidable->broadPhaseHandle.collisionFilterInfo |= (a_collisionFilterInfo << 16);
+	static void resetProjectileOwner(
+		RE::Projectile * projectile ,
+		RE::Actor * actor ,
+		RE::hkpCollidable* collidable
+	){
+		projectile -> SetActorCause(actor -> GetActorCause());
+		projectile -> shooter = actor -> GetHandle();
+
+		uint32_t info;
+		actor -> GetCollisionFilterInfo(info);
+		
+		collidable -> broadPhaseHandle.collisionFilterInfo &= (0x0000FFFF);
+		collidable -> broadPhaseHandle.collisionFilterInfo |= (info << 16);
 	}
 
-	inline static void PushActorAway(RE::Actor* causer, RE::Actor* target, float magnitude)
-	{
-		auto targetPoint = causer->GetNodeByName(causer->race->bodyPartData->parts[0]->targetName.c_str());
-		RE::NiPoint3 vec = targetPoint->world.translate;
-		//RE::NiPoint3 vec = causer->GetPosition();
-		_pushActorAway(causer->currentProcess, target, vec, magnitude);
+	inline static void PushActorAway(
+		RE::Actor * origin ,
+		RE::Actor * target ,
+		float magnitude
+	){
+		auto name = origin
+			-> race
+			-> bodyPartData
+			-> parts[0]
+			-> targetName.c_str();
+
+		auto point = origin -> GetNodeByName(name);
+		auto vector = point -> world.translate;
+
+		_pushActorAway(origin -> currentProcess,target,vector,magnitude);
 	}
 
-		/*Play sound with formid at a certain actor's position.
-	@param a: actor on which to play sonud.
-	@param formid: formid of the sound descriptor.*/
-	static void playSound(RE::Actor* a, RE::BGSSoundDescriptorForm* a_descriptor)
-	{
+
+	/**
+	 *	@brief Play sound with formid at a certain actor's position.
+	 * 
+	 *	@param actor Actor on which to play sonud.
+	 *	@param descriptor Formid of the sound descriptor.
+	 */
+
+	static void playSound(RE::Actor * actor, RE::BGSSoundDescriptorForm * descriptor){
+		
 		RE::BSSoundHandle handle;
 		handle.soundID = static_cast<uint32_t>(-1);
 		handle.assumeSuccess = false;
-		*(uint32_t*)&handle.state = 0;
+		
+		* (uint32_t *) & handle.state = 0;
 
 
-		soundHelper_a(RE::BSAudioManager::GetSingleton(), &handle, a_descriptor->GetFormID(), 16);
-		if (set_sound_position(&handle, a->data.location.x, a->data.location.y, a->data.location.z)) {
-			soundHelper_b(&handle, a->Get3D());
-			soundHelper_c(&handle);
+		soundHelper_a(RE::BSAudioManager::GetSingleton(),& handle,descriptor -> GetFormID(),16);
+
+		auto location = actor -> data.location;
+
+		if(set_sound_position(& handle,location.x,location.y,location.z)){
+			soundHelper_b(& handle,actor -> Get3D());
+			soundHelper_c(& handle);
 		}
 	}
 
@@ -297,23 +321,33 @@ public:
 		}
 	}
 
-	/*Get the body position of this actor.*/
-	static void getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos)
-	{
-		if (!a_actor->race) {
-			return;
-		}
-		RE::BGSBodyPart* bodyPart = a_actor->race->bodyPartData->parts[0];
-		if (!bodyPart) {
-			return;
-		}
-		auto targetPoint = a_actor->GetNodeByName(bodyPart->targetName.c_str());
-		if (!targetPoint) {
-			return;
-		}
 
-		pos = targetPoint->world.translate;
+	/**
+	 *	@brief Get the body position of this actor.
+	 */
+
+	static void getBodyPos(RE::Actor * actor,RE::NiPoint3 & position){
+
+		if(!actor -> race)
+			return;
+
+		auto bodyPart = actor
+			-> race
+			-> bodyPartData
+			-> parts[0];
+		
+		if(!bodyPart)
+			return;
+		
+		auto name = bodyPart -> targetName.c_str();
+		auto point = actor -> GetNodeByName(name);
+		
+		if(!point)
+			return;
+
+		position = point -> world.translate;
 	}
+
 
 	/*retarget this projectile to a_target.*/
 	static void RetargetProjectile(RE::Actor* a_actor, RE::Projectile* a_projectile, RE::TESObjectREFR* a_target)
