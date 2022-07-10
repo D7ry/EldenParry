@@ -52,25 +52,31 @@ private:
 		return func(a1, x, y, z);
 	}
 
-	static inline const RE::BSFixedString poise_largest = "poise_largest_start";
-	static inline const RE::BSFixedString poise_largest_fwd = "poise_largest_start_fwd";
-	static inline const RE::BSFixedString poise_large = "poise_large_start";
-	static inline const RE::BSFixedString poise_large_fwd = "poise_large_start_fwd";
-	static inline const RE::BSFixedString poise_med = "poise_med_start";
-	static inline const RE::BSFixedString poise_med_fwd = "poise_med_start_fwd";
-	static inline const RE::BSFixedString poise_small = "poise_small_start";
-	static inline const RE::BSFixedString poise_small_fwd = "poise_small_start_fwd";
 
-	static inline const RE::BSFixedString staggerDirection = "staggerDirection";
-	static inline const RE::BSFixedString StaggerMagnitude = "StaggerMagnitude";
-	static inline const RE::BSFixedString staggerStart = "staggerStart";
-	static inline const RE::BSFixedString staggerStop = "staggerStop";
-	static inline const RE::BSFixedString bleedOutStart = "BleedoutStart";
-	static inline const RE::BSFixedString bleedOutStop = "BleedOutStop";
-	static inline const RE::BSFixedString bleedOutGraphBool = "IsBleedingOut";
+	static inline const RE::BSFixedString
 
-	static inline const RE::BSFixedString recoilLargeStart = "recoilLargeStart";
+		poise_largest_fwd = "poise_largest_start_fwd" ,
+		poise_largest = "poise_largest_start" ,
 
+		poise_large_fwd = "poise_large_start_fwd" ,
+		poise_large = "poise_large_start" ,
+
+		poise_med_fwd = "poise_med_start_fwd" ,
+		poise_med = "poise_med_start" ,
+
+		poise_small_fwd = "poise_small_start_fwd" ,
+		poise_small = "poise_small_start" ,
+
+		staggerDirection = "staggerDirection" ,
+		StaggerMagnitude = "StaggerMagnitude" ,
+		staggerStart = "staggerStart" ,
+		staggerStop = "staggerStop" ,
+
+		bleedOutGraphBool = "IsBleedingOut" ,
+		bleedOutStart = "BleedoutStart" ,
+		bleedOutStop = "BleedOutStop" ,
+
+		recoilLargeStart = "recoilLargeStart" ;
 
 
 	static inline bool ApproximatelyEqual(float A, float B)
@@ -80,9 +86,11 @@ private:
 
 	static inline void SetRotationMatrix(RE::NiMatrix3& a_matrix, float sacb, float cacb, float sb)
 	{
-		float cb = std::sqrtf(1 - sb * sb);
-		float ca = cacb / cb;
-		float sa = sacb / cb;
+		float 
+			cb = std::sqrtf(1 - sb * sb) ,
+			ca = cacb / cb ,
+			ca = sacb / cb ;
+
 		a_matrix.entry[0][0] = ca;
 		a_matrix.entry[0][1] = -sacb;
 		a_matrix.entry[0][2] = sa * sb;
@@ -98,26 +106,41 @@ private:
 	{
 		// http://ringofblades.com/Blades/Code/PredictiveAim.cs
 
-		float projectileSpeedSquared = a_projectileVelocity.SqrLength();
-		float projectileSpeed = std::sqrtf(projectileSpeedSquared);
+		float 
+			projectileSpeedSquared = a_projectileVelocity.SqrLength() ,
+			projectileSpeed = std::sqrtf(projectileSpeedSquared) ;
 
-		if (projectileSpeed <= 0.f || a_projectilePos == a_targetPosition) {
+		if(projectileSpeed <= 0.f)
 			return false;
-		}
+			
+		if(a_projectilePos == a_targetPosition)
+			return false;
 
-		float targetSpeedSquared = a_targetVelocity.SqrLength();
-		float targetSpeed = std::sqrtf(targetSpeedSquared);
-		RE::NiPoint3 targetToProjectile = a_projectilePos - a_targetPosition;
-		float distanceSquared = targetToProjectile.SqrLength();
-		float distance = std::sqrtf(distanceSquared);
+		float 
+			targetSpeedSquared = a_targetVelocity.SqrLength() ,
+			targetSpeed = std::sqrtf(targetSpeedSquared) ;
+		
+		RE::NiPoint3 targetToProjectile = 
+			a_projectilePos - a_targetPosition;
+		
+		float 
+			distanceSquared = targetToProjectile.SqrLength() ,
+			distance = std::sqrtf(distanceSquared) ;
+		
 		RE::NiPoint3 direction = targetToProjectile;
+
 		direction.Unitize();
+		
 		RE::NiPoint3 targetVelocityDirection = a_targetVelocity;
+		
 		targetVelocityDirection.Unitize();
 
-		float cosTheta = (targetSpeedSquared > 0) ? direction.Dot(targetVelocityDirection) : 1.0f;
+		float cosTheta = (targetSpeedSquared > 0) 
+			? direction.Dot(targetVelocityDirection) 
+			: 1.0f;
 
 		bool bValidSolutionFound = true;
+		
 		float t;
 
 		if (ApproximatelyEqual(projectileSpeedSquared, targetSpeedSquared)) {
@@ -130,9 +153,12 @@ private:
 				t = 1;
 			}
 		} else {
-			float a = projectileSpeedSquared - targetSpeedSquared;
-			float b = 2.0f * distance * targetSpeed * cosTheta;
-			float c = -distanceSquared;
+			
+			float 
+				a = projectileSpeedSquared - targetSpeedSquared ,
+				b = 2.0f * distance * targetSpeed * cosTheta ,
+				c = -distanceSquared ;
+
 			float discriminant = b * b - 4.0f * a * c;
 
 			if (discriminant < 0) {
@@ -140,16 +166,20 @@ private:
 				bValidSolutionFound = false;
 				t = 1;
 			} else {
+				
 				// a will never be zero
-				float uglyNumber = sqrtf(discriminant);
-				float t0 = 0.5f * (-b + uglyNumber) / a;
-				float t1 = 0.5f * (-b - uglyNumber) / a;
+				
+				float 
+					uglyNumber = sqrtf(discriminant) ,
+					t0 = 0.5f * (-b + uglyNumber) / a ,
+					t1 = 0.5f * (-b - uglyNumber) / a ;
 
 				// Assign the lowest positive time to t to aim at the earliest hit
-				t = min(t0, t1);
-				if (t < FLT_EPSILON) {
-					t = max(t0, t1);
-				}
+				
+				t = min(t0,t1);
+
+				if(t < FLT_EPSILON)
+					t = max(t0,t1);
 
 				if (t < FLT_EPSILON) {
 					// Time can't flow backwards when it comes to aiming.
@@ -182,11 +212,18 @@ public:
 	static void triggerStagger(RE::Actor* a_aggressor, RE::Actor* a_reactor, float a_reactionMagnitude)
 	{
 		auto headingAngle = a_reactor->GetHeadingAngle(a_aggressor->GetPosition(), false);
-		auto direction = (headingAngle >= 0.0f) ? headingAngle / 360.0f : (360.0f + headingAngle) / 360.0f;
+		
+		auto direction = headingAngle;
+		
+		if(headingAngle < 0.0f) 
+			headingAngle += 360.0f;
+			
+		headingAngle /= 360.0f;
+
 		a_reactor->SetGraphVariableFloat(staggerDirection, direction);
 		a_reactor->SetGraphVariableFloat(StaggerMagnitude, a_reactionMagnitude);
 		a_reactor->NotifyAnimationGraph(staggerStart);
-	};
+	}
 
 	static bool isEquippedShield(RE::Actor* a_actor)
 	{
