@@ -472,82 +472,127 @@ private:
 	}
 
 public:
-	static void playBlockSpark(RE::Actor* a_actor)
-	{
-		if (!a_actor || !a_actor->currentProcess || !a_actor->currentProcess->high || !a_actor->Get3D()) {
-			return;
-		}
-		RE::BIPED_OBJECT BipeObjIndex;
-		auto defenderLeftEquipped = a_actor->GetEquippedObject(true);
 
-		if (defenderLeftEquipped && (defenderLeftEquipped->IsWeapon() || defenderLeftEquipped->IsArmor())) {
-			BipeObjIndex = getBipedIndex(defenderLeftEquipped, false);
-		} else {
-			BipeObjIndex = getBipedIndex(a_actor->GetEquippedObject(false), true);
-		}
+	static void playBlockSpark(RE::Actor * actor){
 
-		if (BipeObjIndex == RE::BIPED_OBJECT::kNone) {
+		if(!actor)
 			return;
-		}
-
-		auto defenderNode = a_actor->GetCurrentBiped()->objects[BipeObjIndex].partClone;
-		if (!defenderNode || !defenderNode.get()) {
-			return;
-		}
-		const char* modelName;
-		if (BipeObjIndex == RE::BIPED_OBJECT::kShield && defenderLeftEquipped && defenderLeftEquipped->IsArmor()) {
-			if (Settings::facts::isValhallaCombatAPIObtained) {
-				modelName = "ValhallaCombat\\impactShieldRoot.nif";
-			} else {
-				modelName = "EldenParry\\impactShieldRoot.nif";
-			}
 			
-		} else {
-			if (Settings::facts::isValhallaCombatAPIObtained) {
-				modelName = "ValhallaCombat\\impactWeaponRoot.nif";
-			} else {
-				modelName = "EldenParry\\impactWeaponRoot.nif";
-			}
-		}
+		if(!actor -> currentProcess)
+			return;
+			
+		if(!actor -> currentProcess -> high)
+			return;
+			
+		if(!actor -> Get3D())
+			return;
+
+		auto defenderLeftEquipped = actor -> GetEquippedObject(true);
+
+		bool isWeaponOrArmor = 
+			defenderLeftEquipped -> IsWeapon() || 
+			defenderLeftEquipped -> IsArmor() ;
+
+		auto BipeObjIndex = (defenderLeftEquipped && isWeaponOrArmor)
+			? getBipedIndex(defenderLeftEquipped,false) :
+			: getBipedIndex(actor -> GetEquippedObject(false),true) ;
+
+		if(BipeObjIndex == RE::BIPED_OBJECT::kNone)
+			return;
+
+		auto defenderNode = actor
+			-> GetCurrentBiped()
+			-> objects[BipeObjIndex]
+			.  partClone;
+		
+		if(!defenderNode)
+			return;
+			
+		if(!defenderNode.get())
+			return;
+		
+		bool hasValhalla = Settings::facts::isValhallaCombatAPIObtained;
+		
+		bool isShield = 
+			BipeObjIndex == RE::BIPED_OBJECT::kShield && 
+			defenderLeftEquipped && 
+			defenderLeftEquipped -> IsArmor();
+
+		const char * modelName;
+		
+		if(hasValhalla)
+			modelName = (isShield)
+				? "ValhallaCombat\\impactShieldRoot.nif"
+				: "ValhallaCombat\\impactWeaponRoot.nif" ;
+		else
+			modelName = (isShield)
+				? "EldenParry\\impactShieldRoot.nif"
+				: "EldenParry\\impactWeaponRoot.nif" ;
+
 		//DEBUG("Get Weapon Spark Position!");
-		a_actor->GetParentCell()->PlaceParticleEffect(0.0f, modelName, defenderNode->world.rotate, defenderNode->worldBound.center, 1.0f, 4U, defenderNode.get());
+		
+		a_actor 
+			-> GetParentCell() 
+			-> PlaceParticleEffect(
+				0.0f , modelName , 
+				defenderNode -> world.rotate , 
+				defenderNode -> worldBound.center , 
+				1.0f , 4U , defenderNode.get()
+			);
 	}
 };
 
 namespace inlineUtils
 {
-	inline bool isPowerAttacking(RE::Actor* a_actor) {
-		if (a_actor->currentProcess && a_actor->currentProcess->high) {
-			auto atkData = a_actor->currentProcess->high->attackData.get();
-			if (atkData) {
-				return atkData->data.flags.any(RE::AttackData::AttackFlag::kPowerAttack);
-			}
-		}
-		return false;
+	inline bool isPowerAttacking(RE::Actor * actor){
+
+		if(!actor -> currentProcess)
+			return false;
+			
+		if(!actor -> currentProcess -> high)
+			return false;
+			
+		auto data = actor
+			-> currentProcess
+			-> high
+			-> attackData.get();
+
+		return data && data -> data.flags
+			.any(RE::AttackData::AttackFlag::kPowerAttack);
 	}
 
 	
-	inline void restoreAv(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
-	{
-		if (a_val == 0) {
-			return;
-		}
-		if (a_actor) {
-			a_actor->As<RE::ActorValueOwner>()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, a_actorValue, a_val);
-		}
-	}
+	inline void restoreAv(RE::Actor * actor,RE::ActorValue actorValue,float value){
 
-	inline void damageAv(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
-	{
-		if (a_val == 0) {
+		if(value == 0)
 			return;
-		}
-		if (a_actor) {
-			a_actor->As<RE::ActorValueOwner>()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, a_actorValue, -a_val);
-		}
+		
+		if(!actor)
+			return;
+
+		actor 
+			-> As<RE::ActorValueOwner>() 
+			-> RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage,actorValue,value);
 	}
 
 
-	typedef void(_fastcall* _shakeCamera)(float strength, RE::NiPoint3 source, float duration);
-	inline static REL::Relocation<_shakeCamera> shakeCamera{ RELOCATION_ID(32275, 33012) };
+	inline void damageAv(RE::Actor * actor,RE::ActorValue actorValue,float value){
+
+		if(a_val == 0)
+			return;
+
+		if(!a_actor)
+			return;
+
+		a_actor
+			-> As<RE::ActorValueOwner>()
+			-> RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage,actorValue,-value);
+	}
+
+
+	typedef void (_fastcall * _shakeCamera)(float strength,RE::NiPoint3 source,float duration);
+
+	inline static REL::Relocation<_shakeCamera> shakeCamera { 
+		RELOCATION_ID(32275, 33012)
+	};
 };
