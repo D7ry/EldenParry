@@ -422,26 +422,50 @@ public:
 class blockSpark
 {
 private:
-	static auto getBipedIndex(RE::TESForm* parryEquipment, bool rightHand) {
-		if (!parryEquipment)
+	static auto getBipedIndex(RE::TESForm * parryEquipment,bool rightHand){
+
+		if(!parryEquipment)
 			return RE::BIPED_OBJECT::kNone;
 
-		if (parryEquipment->As<RE::TESObjectWEAP>()) {
-			switch (parryEquipment->As<RE::TESObjectWEAP>()->GetWeaponType()) {
-			case RE::WEAPON_TYPE::kOneHandSword:
-				return rightHand ? RE::BIPED_OBJECT::kOneHandSword : RE::BIPED_OBJECT::kShield;
-			case RE::WEAPON_TYPE::kOneHandAxe:
-				return rightHand ? RE::BIPED_OBJECT::kOneHandAxe : RE::BIPED_OBJECT::kShield;
-			case RE::WEAPON_TYPE::kOneHandMace:
-				return rightHand ? RE::BIPED_OBJECT::kOneHandMace : RE::BIPED_OBJECT::kShield;
-			case RE::WEAPON_TYPE::kOneHandDagger:
-				return rightHand ? RE::BIPED_OBJECT::kOneHandDagger : RE::BIPED_OBJECT::kShield;
-			case RE::WEAPON_TYPE::kTwoHandAxe:
-			case RE::WEAPON_TYPE::kTwoHandSword:
-			case RE::WEAPON_TYPE::kHandToHandMelee:
-				return RE::BIPED_OBJECT::kTwoHandMelee;
-			}
-		} else if (parryEquipment->IsArmor())
+		auto object = parryEquipment -> As<RE::TESObjectWEAP>();
+
+		if(object){
+
+			auto weaponType = object -> GetWeaponType();
+
+			if(rightHand)
+				switch(weaponType){
+				case RE::WEAPON_TYPE::kOneHandSword :
+					return RE::BIPED_OBJECT::kOneHandSword ;
+				case RE::WEAPON_TYPE::kOneHandAxe :
+					return RE::BIPED_OBJECT::kOneHandAxe ;
+				case RE::WEAPON_TYPE::kOneHandMace :
+					return RE::BIPED_OBJECT::kOneHandMace ;
+				case RE::WEAPON_TYPE::kOneHandDagger :
+					return RE::BIPED_OBJECT::kOneHandDagger ;
+				case RE::WEAPON_TYPE::kHandToHandMelee :
+				case RE::WEAPON_TYPE::kTwoHandSword :
+				case RE::WEAPON_TYPE::kTwoHandAxe :
+					return RE::BIPED_OBJECT::kTwoHandMelee ;
+				}
+			else
+				switch(weaponType){
+				case RE::WEAPON_TYPE::kOneHandSword :
+				case RE::WEAPON_TYPE::kOneHandAxe :
+				case RE::WEAPON_TYPE::kOneHandMace :
+				case RE::WEAPON_TYPE::kOneHandDagger :
+					return RE::BIPED_OBJECT::kShield ;
+				case RE::WEAPON_TYPE::kHandToHandMelee :
+				case RE::WEAPON_TYPE::kTwoHandSword :
+				case RE::WEAPON_TYPE::kTwoHandAxe :
+					return RE::BIPED_OBJECT::kTwoHandMelee ;
+				}
+
+			return RE::BIPED_OBJECT::kNone;
+		}
+			
+		
+		if(parryEquipment -> IsArmor())
 			return RE::BIPED_OBJECT::kShield;
 
 		return RE::BIPED_OBJECT::kNone;
