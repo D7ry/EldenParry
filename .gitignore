@@ -1,4 +1,4 @@
-!Update.ps1
+=!Update.ps1
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
@@ -9,4 +9,4 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 build
-.clang-format
+.editorconfig
