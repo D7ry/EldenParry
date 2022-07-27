@@ -2,27 +2,10 @@
 class Utils
 {
 private:
-#define PI 3.1415926535897932384626
+#define PI 3.1415926535897932384626f
 	typedef void(_fastcall* tPushActorAway_sub_14067D4A0)(RE::AIProcess* a_causer, RE::Actor* a_target, RE::NiPoint3& a_origin, float a_magnitude);
 	inline static REL::Relocation<tPushActorAway_sub_14067D4A0> _pushActorAway{ REL::ID(38858) };
 
-	template <typename Iter, typename RandomGenerator>
-	static inline Iter select_randomly(Iter start, Iter end, RandomGenerator& g)
-	{
-		std::uniform_int_distribution<> dis(0, std::distance(start, end) - 1);
-		std::advance(start, dis(g));
-		return start;
-	}
-
-	template <typename Iter>
-	static inline Iter select_randomly(Iter start, Iter end)
-	{
-		static std::random_device rd;
-		static std::mt19937 gen(rd());
-		return select_randomly(start, end, gen);
-	}
-
-	
 
 	static inline int soundHelper_a(void* manager, RE::BSSoundHandle* a2, int a3, int a4)  //sub_140BEEE70
 	{
@@ -230,11 +213,6 @@ public:
 		}
 	}
 
-	static void playSound(RE::Actor* a, std::vector<RE::BGSSoundDescriptorForm*> sounds)
-	{
-		playSound(a, *select_randomly(sounds.begin(), sounds.end()));
-	}
-		
 	static void ReflectProjectile(RE::Projectile* a_projectile)
 	{
 		a_projectile->linearVelocity *= -1.f;
@@ -279,7 +257,7 @@ public:
 	}
 
 	/*retarget this projectile to a_target.*/
-	static void RetargetProjectile(RE::Actor* a_actor, RE::Projectile* a_projectile, RE::TESObjectREFR* a_target)
+	static void RetargetProjectile(RE::Projectile* a_projectile, RE::TESObjectREFR* a_target)
 	{
 		a_projectile->desiredTarget = a_target;
 

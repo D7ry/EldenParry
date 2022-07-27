@@ -51,7 +51,7 @@ namespace Hooks
 		}
 
 	private:
-		static inline bool shouldIgnoreHit(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr)
+		static inline bool shouldIgnoreHit(RE::Actor* a_aggressor, RE::Actor* a_victim)
 		{
 			//for aggressor: cancle parry hitframe.
 			
@@ -83,7 +83,7 @@ namespace Hooks
 		}
 		static void processHit(RE::Actor* a_aggressor, RE::Actor* a_victim, std::int64_t a_int1, bool a_bool, void* a_unkptr)
 		{
-			if (shouldIgnoreHit(a_aggressor, a_victim, a_int1, a_bool, a_unkptr)) {
+			if (shouldIgnoreHit(a_aggressor, a_victim)) {
 				return;
 			}
 			_ProcessHit(a_aggressor, a_victim, a_int1, a_bool, a_unkptr);
@@ -132,7 +132,7 @@ namespace Hooks
 		};
 
 	private:
-		static inline bool initProjectileBlock(RE::Projectile* a_projectile, RE::hkpAllCdPointCollector* a_AllCdPointCollector)
+		static inline bool shouldIgnoreHit(RE::Projectile* a_projectile, RE::hkpAllCdPointCollector* a_AllCdPointCollector)
 		{
 			if (a_AllCdPointCollector) {
 				for (auto& hit : a_AllCdPointCollector->hits) {
@@ -148,7 +148,7 @@ namespace Hooks
 					if (refrB && refrB->formType == RE::FormType::ActorCharacter && refrB->As<RE::Actor>()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 						if (refrB->IsPlayerRef() || Settings::bEnableNPCParry) {
 							if ((a_projectile->spell && Settings::bEnableMagicProjectileDeflection) || Settings::bEnableArrowProjectileDeflection) {
-								return EldenParry::GetSingleton()->processProjectileParry(refrA->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableA));
+								return EldenParry::GetSingleton()->processProjectileParry(refrB->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableA));
 							}
 						}
 					}
@@ -158,7 +158,7 @@ namespace Hooks
 		}
 		static void OnArrowCollision(RE::Projectile* a_this, RE::hkpAllCdPointCollector* a_AllCdPointCollector)
 		{
-			if (initProjectileBlock(a_this, a_AllCdPointCollector)) {
+			if (shouldIgnoreHit(a_this, a_AllCdPointCollector)) {
 				return;
 			};
 			_arrowCollission(a_this, a_AllCdPointCollector);
@@ -166,7 +166,7 @@ namespace Hooks
 
 		static void OnMissileCollision(RE::Projectile* a_this, RE::hkpAllCdPointCollector* a_AllCdPointCollector)
 		{
-			if (initProjectileBlock(a_this, a_AllCdPointCollector)) {
+			if (shouldIgnoreHit(a_this, a_AllCdPointCollector)) {
 				return;
 			};
 			_missileCollission(a_this, a_AllCdPointCollector);

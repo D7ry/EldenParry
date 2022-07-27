@@ -43,42 +43,28 @@ void EldenParry::update() {
 	if (!_bUpdate) {
 		return;
 	}
-	//logger::info("update");
 	uniqueLocker lock(mtx_parryTimer);
-	//logger::info("1");
 	auto it = _parryTimer.begin();
 	if (it == _parryTimer.end()) {
 		_bUpdate = false;
-		//logger::info("2");
-		//logger::info("done");
 		return;
 	}
 	while (it != _parryTimer.end()) {
-		//logger::info("3");
 		if (!it->first) {
-			//logger::info("4");
 			it = _parryTimer.erase(it);
-			//logger::info("5");
 			continue;
 		}
 		if (it->second > Settings::fParryWindow_End) {
-			//logger::info("6");
 			it = _parryTimer.erase(it);
-			//RE::ConsoleLog::GetSingleton()->Print("Finish timing parry");
-			//logger::info("7");
 			continue;
 		}
-		//logger::info("8");
 		it->second += *Offsets::g_deltaTime;
-		//logger::info("9");
 		it++;
 	}
-	//logger::info("done");
 }
 
 void EldenParry::startTimingParry(RE::Actor* a_actor) {
-	//RE::ConsoleLog::GetSingleton()->Print("Start timing parry");
-	logger::info("start timing parry...");
+
 	uniqueLocker lock(mtx_parryTimer);
 	auto it = _parryTimer.find(a_actor);
 	if (it != _parryTimer.end()) {
@@ -88,13 +74,11 @@ void EldenParry::startTimingParry(RE::Actor* a_actor) {
 	}
 	
 	_bUpdate = true;
-	logger::info("done");
 }
 
 void EldenParry::finishTimingParry(RE::Actor* a_actor) {
 	uniqueLocker lock(mtx_parryTimer);
 	_parryTimer.erase(a_actor);
-	//RE::ConsoleLog::GetSingleton()->Print("Finish timing parry");
 }
 
 /// <summary>
@@ -118,7 +102,6 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 	sharedLocker lock(mtx_parryTimer);
 	auto it = _parryTimer.find(a_actor);
 	if (it != _parryTimer.end()) {
-		//logger::info("Parried by {}, time: {}", a_actor->GetName(), it->second);
 		return it->second >= Settings::fParryWindow_Start;
 	}
 	return false;
@@ -126,6 +109,7 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 
 bool EldenParry::canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj)
 {
+	logger::info(a_parrier->GetName());
 	return inParryState(a_parrier) && inBlockAngle(a_parrier, a_obj);
 }
 
@@ -141,7 +125,9 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 		if (a_parrier->IsPlayerRef()) {
 			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fMeleeParryExp);
 		}
-		negateParryCost(a_parrier);
+		if (Settings::bSuccessfulParryNoCost) {
+			negateParryCost(a_parrier);
+		}
 		return true;
 	}
 
@@ -168,7 +154,7 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 		Utils::resetProjectileOwner(a_projectile, a_parrier, a_projectile_collidable);
 
 		if (shooter && shooter->Is3DLoaded()) {
-			Utils::RetargetProjectile(a_parrier, a_projectile, shooter);
+			Utils::RetargetProjectile(a_projectile, shooter);
 		} else {
 			Utils::ReflectProjectile(a_projectile);
 		}
@@ -177,7 +163,9 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 		if (a_parrier->IsPlayerRef()) {
 			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fProjectileParryExp);
 		}
-		negateParryCost(a_parrier);
+		if (Settings::bSuccessfulParryNoCost) {
+			negateParryCost(a_parrier);
+		}
 		return true;
 	}
 	return false;
