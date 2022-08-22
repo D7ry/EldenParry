@@ -128,6 +128,7 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 		if (Settings::bSuccessfulParryNoCost) {
 			negateParryCost(a_parrier);
 		}
+		send_melee_parry_event(a_attacker);
 		return true;
 	}
 
@@ -166,6 +167,7 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 		if (Settings::bSuccessfulParryNoCost) {
 			negateParryCost(a_parrier);
 		}
+		send_ranged_parry_event();
 		return true;
 	}
 	return false;
@@ -251,6 +253,30 @@ void EldenParry::playGuardBashEffects(RE::Actor* a_actor) {
 			inlineUtils::shakeCamera(1.5, a_actor->GetPosition(), 0.4f);
 		}
 	}
+}
+
+void EldenParry::send_melee_parry_event(RE::Actor* a_attacker) {
+	SKSE::ModCallbackEvent modEvent{
+				RE::BSFixedString("EP_MeleeParryEvent"),
+				RE::BSFixedString(),
+				0.0f,
+				a_attacker
+	};
+
+	SKSE::GetModCallbackEventSource()->SendEvent(&modEvent);
+	logger::info("Sent melee parry event");
+}
+
+void EldenParry::send_ranged_parry_event() {
+	SKSE::ModCallbackEvent modEvent{
+				RE::BSFixedString("EP_RangedParryEvent"),
+				RE::BSFixedString(),
+				0.0f,
+				nullptr
+	};
+
+	SKSE::GetModCallbackEventSource()->SendEvent(&modEvent);
+	logger::info("Sent ranged parry event");
 }
 
 PRECISION_API::PreHitCallbackReturn EldenParry::precisionPrehitCallbackFunc(const PRECISION_API::PrecisionHitData& a_precisionHitData) {

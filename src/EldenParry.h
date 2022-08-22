@@ -41,6 +41,9 @@ public:
 	void startTimingParry(RE::Actor* a_actor);
 	void finishTimingParry(RE::Actor* a_actor);
 
+	void send_melee_parry_event(RE::Actor* a_attacker);
+	void send_ranged_parry_event();
+
 	void update();
 
 private:
